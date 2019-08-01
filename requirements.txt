@@ -2,10 +2,9 @@ matplotlib
 numpy
 pandas
 keras
-keras-gpu
-scikit_learn
-opencv-python
-Pillow
+scikit-learn
+opencv
+pillow
 eventlet
 flask
 python-socketio
