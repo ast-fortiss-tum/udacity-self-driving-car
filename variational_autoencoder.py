@@ -1,6 +1,6 @@
 from keras import Input, Model
-from keras.callbacks import TensorBoard, ModelCheckpoint
-from keras.layers import Dense, Lambda, K
+from keras import backend as K
+from keras.layers import Dense, Lambda
 
 from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS
 
@@ -23,7 +23,7 @@ def sampling(args):
 
 class VariationalAutoencoder:
 
-    def __init__(self, model_name, intermediate_dim=512, latent_dim=2):
+    def __init__(self, model_name, intermediate_dim=512, latent_dim=4):
         self.model_name = model_name
         self.intermediate_dim = intermediate_dim
         self.latent_dim = latent_dim

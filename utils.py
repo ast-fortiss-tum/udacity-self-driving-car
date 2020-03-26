@@ -1,11 +1,20 @@
-import cv2, os
-import numpy as np
-import matplotlib.image as mpimg
+import csv
+import os
+import shutil
 
+import cv2
+import matplotlib.image as mpimg
+import numpy as np
+from keras import backend as K
 
 # IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
+
+csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
+csv_fieldnames_improved_simulator = ["FrameId", "Self Driving Model", "Anomaly Detector", "Threshold", "Track Name",
+                                     "Lap Number", "Check Point", "Loss", "CTE" "Steering Angle", "Throttle", "Brake",
+                                     "Speed", "Crashed", "center", "Tot OBEs", "Tot Crashes"]
 
 
 def load_image(data_dir, image_file):
@@ -21,12 +30,11 @@ def load_image(data_dir, image_file):
         print("")
 
 
-
 def crop(image):
     """
     Crop the image (removing the sky at the top and the car front at the bottom)
     """
-    return image[60:-25, :, :] # remove the sky and the car front
+    return image[60:-25, :, :]  # remove the sky and the car front
 
 
 def resize(image):
@@ -124,7 +132,7 @@ def random_brightness(image):
     # HSV (Hue, Saturation, Value) is also called HSB ('B' for Brightness).
     hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
     ratio = 1.0 + 0.4 * (np.random.rand() - 0.5)
-    hsv[:, :, 2] =  hsv[:,:,2] * ratio
+    hsv[:, :, 2] = hsv[:, :, 2] * ratio
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 
@@ -156,8 +164,8 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
             if is_training and np.random.rand() < 0.6:
                 image, steering_angle = augment(data_dir, center, left, right, steering_angle)
             else:
-                image = load_image(data_dir, center) 
-            # add the image and steering angle to the batch
+                image = load_image(data_dir, center)
+                # add the image and steering angle to the batch
             images[i] = preprocess(image)
             steers[i] = steering_angle
             i += 1
@@ -165,3 +173,54 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
                 break
         yield images, steers
 
+
+def rmse(y_true, y_pred):
+    '''
+    Calculates RMSE
+    '''
+    return K.sqrt(K.mean(K.square(y_pred - y_true)))
+
+
+def writeCsvLine(filename, row):
+    if filename is not None:
+        filename += "/driving_log.csv"
+        with open(filename, mode='a') as result_file:
+            writer = csv.writer(result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+                                lineterminator='\n')
+            writer.writerow(row)
+            result_file.flush()
+            result_file.close()
+    else:
+        create_csv_results_file_header(filename)
+
+
+def create_csv_results_file_header(file_name, fieldnames):
+    if file_name is not None:
+        file_name += "/driving_log.csv"
+        with open(file_name, mode='w', newline='') as result_file:
+            csv.writer(result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+            writer = csv.DictWriter(result_file, fieldnames=fieldnames)
+            writer.writeheader()
+            result_file.flush()
+            result_file.close()
+
+    return None
+
+
+def create_output_dir(args, fieldnames):
+    path = os.path.join(args.data_dir, args.sim_name, "IMG")
+    csv_path = os.path.join(args.data_dir, args.sim_name)
+    print("Creating image folder at {}".format(path))
+    if not os.path.exists(path):
+        os.makedirs(path)
+        create_csv_results_file_header(csv_path, fieldnames)
+    else:
+        shutil.rmtree(csv_path)
+        os.makedirs(path)
+
+
+def load_autoencoder(model):
+    autoencoder = model.create_autoencoder()
+    autoencoder.load_weights(model.model_name)
+    assert (autoencoder is not None)
+    return autoencoder

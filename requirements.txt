@@ -1,9 +1,10 @@
 matplotlib
 numpy
 pandas
+tensorflow
 keras
 scikit-learn
-opencv
+opencv-python
 pillow
 eventlet
 flask
