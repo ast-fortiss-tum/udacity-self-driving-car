@@ -13,7 +13,7 @@ INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
 csv_fieldnames_improved_simulator = ["FrameId", "Self Driving Model", "Anomaly Detector", "Threshold", "Track Name",
-                                     "Lap Number", "Check Point", "Loss", "CTE" "Steering Angle", "Throttle", "Brake",
+                                     "Lap Number", "Check Point", "Loss", "CTE", "Steering Angle", "Throttle", "Brake",
                                      "Speed", "Crashed", "center", "Tot OBEs", "Tot Crashes"]
 
 
