@@ -103,7 +103,7 @@ def telemetry(sid, data):
 
             global frame_id
 
-            print('steering_angle: {} - cte: {}'.format(steering_angle, cte))
+            # print('steering_angle: {} - cte: {}'.format(steering_angle, cte))
 
             send_control(steering_angle, throttle, confidence, loss, args.max_laps)
             if args.data_dir:
@@ -146,14 +146,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Remote Driving - Data Collection')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,
                         default='simulations')
-    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='trial')
+                        # default='')
+    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
-                        default="models/model.h5")
+                        default="models/dave2-dataset5-823.h5")
     parser.add_argument('-ad', help='path to the anomaly detector model', dest='anomaly_detector', type=str,
                         default="sao/VAE-ICSE20.h5")  # DO NOT CHANGE THIS
     parser.add_argument('-threshold', help='threshold for the outlier detector', dest='threshold', type=float,
                         default=0.035)
-    parser.add_argument('-s', help='speed', dest='speed', type=int, default=30)
+    parser.add_argument('-s', help='speed', dest='speed', type=int, default=35)
     parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=1)
 
     args = parser.parse_args()
