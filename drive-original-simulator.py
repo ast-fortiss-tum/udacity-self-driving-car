@@ -44,7 +44,7 @@ def telemetry(sid, data):
         image_path = ''
         if args.data_dir != '':
             timestamp = datetime.utcnow().strftime('%Y_%m_%d_%H_%M_%S_%f')[:-3]
-            image_filename = os.path.join(args.data_dir, args.track_name, "IMG", timestamp)
+            image_filename = os.path.join(args.data_dir, args.sim_name, "IMG", timestamp)
             image_path = '{}.jpg'.format(image_filename)
             image.save(image_path)
 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Remote Driving - Data Collection')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,
                         default='simulations')
-    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='trial')
+    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
                         default="models/model.h5")
     parser.add_argument('-s', help='max speed', dest='max_speed', type=int, default=30)
