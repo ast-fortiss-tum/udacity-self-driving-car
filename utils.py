@@ -5,6 +5,7 @@ import shutil
 import cv2
 import matplotlib.image as mpimg
 import numpy as np
+import pandas as pd
 from keras import backend as K
 
 # IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3
@@ -12,9 +13,9 @@ IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
-csv_fieldnames_improved_simulator = ["FrameId", "Self Driving Model", "Anomaly Detector", "Threshold", "Track Name",
-                                     "Lap Number", "Check Point", "Loss", "CTE", "Steering Angle", "Throttle", "Brake",
-                                     "Speed", "Crashed", "center", "Tot OBEs", "Tot Crashes"]
+csv_fieldnames_improved_simulator = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
+                                     "lap", "waypoint", "loss", "cte", "steering_angle", "throttle",
+                                     "speed", "crashed", "center", "tot_OBEs", "tot_crashes"]
 
 
 def load_image(data_dir, image_file):
@@ -222,5 +223,17 @@ def create_output_dir(args, fieldnames):
 def load_autoencoder(model):
     autoencoder = model.create_autoencoder()
     autoencoder.load_weights(model.model_name)
-    assert (autoencoder is not None)
+    assert autoencoder is not None
     return autoencoder
+
+
+def load_driving_data(args: object) -> object:
+    try:
+        path = os.path.join(args.data_dir, args.sim_name, 'driving_log.csv')
+        # print(path)
+        data_df = pd.read_csv(path, keep_default_na=False)
+    except FileNotFoundError:
+        print("Unable to read file %s" % path)
+        exit()
+
+    return data_df
