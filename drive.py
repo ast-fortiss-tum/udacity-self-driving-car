@@ -178,8 +178,6 @@ if __name__ == '__main__':
     anomaly_detection = utils.load_autoencoder(autoenconder_model)
     anomaly_detection.compile(optimizer='adam', loss='mean_squared_error')
 
-    assert anomaly_detection is not None
-
     if args.data_dir != '':
         utils.create_output_dir(args, utils.csv_fieldnames_improved_simulator)
         print("RECORDING THIS RUN ...")
