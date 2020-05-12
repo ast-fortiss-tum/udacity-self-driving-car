@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Remote Driving - Data Collection')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,
-                        default='simulations')
+                        default='')
     parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
                         default="models/model.h5")

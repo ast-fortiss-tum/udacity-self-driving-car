@@ -1,5 +1,5 @@
-from keras.utils import Sequence
-from keras.layers import np
+from tensorflow.keras.utils import Sequence
+import numpy as np
 from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS, load_image, augment, preprocess
 
 
@@ -23,11 +23,13 @@ class Generator(Sequence):
         for i, paths in enumerate(batch_paths):
             center, left, right = batch_paths[i]
             steering_angle = steering_angles[i]
-            # argumentation
+            # augmentation
             if self.is_training and np.random.rand() < 0.6:
                 image, steering_angle = augment(self.args.data_dir, center, left, right, steering_angle)
             else:
                 image = load_image(self.args.data_dir, center)
+            # normalization
+            image = image / 127.5 - 1.0
             # add the image and steering angle to the batch
             images[i] = preprocess(image)
             steers[i] = steering_angle

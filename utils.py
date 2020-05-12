@@ -8,14 +8,14 @@ import numpy as np
 import pandas as pd
 from keras import backend as K
 
-# IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3
-IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
+IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 80, 160, 3
+# IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
 csv_fieldnames_improved_simulator = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
                                      "lap", "waypoint", "loss", "cte", "steering_angle", "throttle",
-                                     "speed", "crashed", "center", "tot_OBEs", "tot_crashes"]
+                                     "speed", "brake", "intensity", "crashed", "center", "tot_OBEs", "tot_crashes"]
 
 
 def load_image(data_dir, image_file):
@@ -49,7 +49,8 @@ def rgb2yuv(image):
     """
     Convert the image from RGB to YUV (This is what the NVIDIA model does)
     """
-    return cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+    # return cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+    return cv2.cvtColor(image.astype('uint8') * 255, cv2.COLOR_RGB2YUV)
 
 
 def preprocess(image):

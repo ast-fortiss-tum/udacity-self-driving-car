@@ -23,7 +23,7 @@ from PIL import Image
 from flask import Flask
 from io import BytesIO
 
-from keras.models import load_model
+import tensorflow as tf
 from utils import rmse
 from variational_autoencoder import VariationalAutoencoder
 
@@ -50,6 +50,14 @@ def telemetry(sid, data):
 
         # Cross-Track Error
         cte = float(data["cte"])
+
+        # brake
+        brake = float(data["brake"])
+        # print("brake: %.2f" % brake)
+
+        # intensity
+        intensity = float(data["intensity"])
+        # print("intensity: %.2f" % intensity)
 
         # whether an OBE or crash occurred
         isCrash = int(data["crash"])
@@ -110,8 +118,8 @@ def telemetry(sid, data):
                 csv_path = os.path.join(args.data_dir, args.sim_name)
                 utils.writeCsvLine(csv_path,
                                    [frame_id, args.model, args.anomaly_detector, args.threshold, args.sim_name,
-                                    lapNumber, wayPoint, loss, cte, steering_angle, throttle, speed, isCrash,
-                                    image_path, number_obe, number_crashes])
+                                    lapNumber, wayPoint, loss, cte, steering_angle, throttle, speed,
+                                    brake, intensity, isCrash, image_path, number_obe, number_crashes])
 
                 frame_id = frame_id + 1
 
@@ -145,17 +153,20 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Remote Driving - Data Collection')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,
-                        default='simulations')
-                        # default='')
-    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='')
+                        default='')
+    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='track1-foggy-adaptive')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
-                        default="models/dave2-dataset5-823.h5")
+                        # default="models/dave2-dataset5-823.h5")
+                        default="models/dave2-100.h5")
     parser.add_argument('-ad', help='path to the anomaly detector model', dest='anomaly_detector', type=str,
-                        default="sao/VAE-ICSE20.h5")  # DO NOT CHANGE THIS
+                        # default="sao/VAE-ICSE20.h5")  # DO NOT CHANGE THIS
+                        # default="sao/VAE-ICSE20.h5")
+                        default="sao/dataset5-variationalautoencoder.h5")
     parser.add_argument('-threshold', help='threshold for the outlier detector', dest='threshold', type=float,
-                        default=0.035)
+                        # default=0.035)
+                        default=0.0454)
     parser.add_argument('-s', help='speed', dest='speed', type=int, default=35)
-    parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=1)
+    parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=2)
 
     args = parser.parse_args()
 
@@ -167,9 +178,9 @@ if __name__ == '__main__':
     print('-' * 30)
 
     if "chauffeur" in args.model:
-        model = load_model(args.model, custom_objects={"rmse": rmse})
+        model = tf.keras.models.load_model(args.model, custom_objects={"rmse": rmse})
     else:
-        model = load_model(args.model)
+        model = tf.keras.models.load_model(args.model)
 
     MAX_SPEED = args.speed
     MIN_SPEED = 10
