@@ -23,7 +23,7 @@ from PIL import Image
 from flask import Flask
 from io import BytesIO
 
-import tensorflow as tf
+from tensorflow.keras.models import load_model
 from utils import rmse
 from variational_autoencoder import VariationalAutoencoder
 
@@ -56,7 +56,8 @@ def telemetry(sid, data):
         # print("brake: %.2f" % brake)
 
         # intensity
-        intensity = float(data["intensity"])
+        # intensity = float(data["intensity"])
+        intensity = 0
         # print("intensity: %.2f" % intensity)
 
         # whether an OBE or crash occurred
@@ -174,9 +175,9 @@ if __name__ == '__main__':
     print('-' * 30)
 
     if "chauffeur" in args.model:
-        model = tf.keras.models.load_model(args.model, custom_objects={"rmse": rmse})
+        model = load_model(args.model, custom_objects={"rmse": rmse})
     else:
-        model = tf.keras.models.load_model(args.model)
+        model = load_model(args.model)
 
     MAX_SPEED = args.speed
     MIN_SPEED = 10
