@@ -156,15 +156,11 @@ if __name__ == '__main__':
                         default='')
     parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='track1-foggy-adaptive')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
-                        # default="models/dave2-dataset5-823.h5")
-                        default="models/dave2-100.h5")
+                        default="models/dave2-dataset5-823.h5")
     parser.add_argument('-ad', help='path to the anomaly detector model', dest='anomaly_detector', type=str,
-                        # default="sao/VAE-ICSE20.h5")  # DO NOT CHANGE THIS
-                        # default="sao/VAE-ICSE20.h5")
-                        default="sao/dataset5-variationalautoencoder.h5")
+                        default="sao/dataset5-variationalautoencoder.h5")  # DO NOT CHANGE THIS
     parser.add_argument('-threshold', help='threshold for the outlier detector', dest='threshold', type=float,
-                        # default=0.035)
-                        default=0.0454)
+                        default=0.035)
     parser.add_argument('-s', help='speed', dest='speed', type=int, default=35)
     parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=2)
 
