@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 
 import utils
+import tensorflow as tf
 
 logging.disable(logging.WARNING)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -114,9 +115,9 @@ if __name__ == '__main__':
     print('-' * 30)
 
     if "chauffeur" in args.model:
-        model = load_model(args.model, custom_objects={"rmse": rmse})
+        model = tf.keras.models.load_model(args.model, custom_objects={"rmse": rmse})
     else:
-        model = load_model(args.model)
+        model = tf.keras.models.load_model(args.model)
 
     assert model is not None
 
