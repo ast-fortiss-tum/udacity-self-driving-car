@@ -1,9 +1,8 @@
-from keras import Input, Model
-from keras import backend as K
-from keras.layers import Dense, Lambda
+from tensorflow.keras import Input, Model
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Dense, Lambda
 
-from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS
-
+IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3  # autoencoder uses the full image size
 
 def sampling(args):
     """Reparameterization trick by sampling fr an isotropic unit Gaussian.

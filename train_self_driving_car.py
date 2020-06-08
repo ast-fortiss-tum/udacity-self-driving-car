@@ -30,7 +30,6 @@ def load_data(args):
         for drive_style in drive:
             try:
                 path = os.path.join(args.data_dir, track, drive_style, 'driving_log.csv')
-                # print(path)
                 data_df = pd.read_csv(path)
                 if x is None:
                     x = data_df[['center', 'left', 'right']].values
@@ -98,7 +97,9 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
 
     model.fit(generator=train_generator,
               validation_data=validation_generator,
+              samples_per_epoch=train_generator.nb_samples,
               epochs=args.nb_epoch,
+              nb_val_samples=validation_generator.nb_samples,
               use_multiprocessing=False,
               max_queue_size=10,
               workers=4,
@@ -112,7 +113,7 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
         s = s.lower()
         return s == 'true' or s == 'yes' or s == 'y' or s == '1'
 
-    def main():
+    if __name__ == '__main__':
         """
         Load train/validation data set and train the model
         """
@@ -121,7 +122,6 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
         parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0.2)
         parser.add_argument('-k', help='drop out probability', dest='keep_prob', type=float, default=0.5)
         parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=5)
-        parser.add_argument('-s', help='samples per epoch', dest='samples_per_epoch', type=int, default=100)
         parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=128)
         parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='true')
         parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
@@ -137,6 +137,3 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
         data = load_data(args)
         model = build_model(args)
         train_model(model, args, *data)
-
-    if __name__ == '__main__':
-        main()
