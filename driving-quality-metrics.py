@@ -7,7 +7,7 @@ import utils
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Driving Quality Metrics')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str, default='simulations')
-    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='track1-sunny')
+    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='track1-daynight')
     parser.add_argument('-g', help='granularity', dest='granularity', type=str, default='sector',
                         choices=['sector', 'frame'])
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             rows = data_df[(data_df['waypoint'] == wp) & (data_df['lap'] == lap)]
 
             rows = rows[
-                ['frameId', 'loss', 'threshold', 'lap', 'waypoint', 'throttle', 'speed', 'brake', 'intensity', 'cte',
+                ['frameId', 'loss', 'threshold', 'lap', 'waypoint', 'throttle', 'speed', 'brake', 'cte',
                  'crashed']]
 
             # percentage of sector completed
@@ -90,12 +90,11 @@ if __name__ == '__main__':
             # per-frame metric: for all frames, calculate the metrics in that frame
             if args.granularity == "frame":
                 for ind in rows.index:
-                    print("\tFrameId %d: CTE %.4f - loss %.4f - speed %.2f - intensity: %.2f - crash: %d" % (
+                    print("\tFrameId %d: CTE %.4f - loss %.4f - speed %.2f - crash: %d" % (
                         rows['frameId'][ind],
                         rows['cte'][ind],
                         rows['loss'][ind],
                         rows['speed'][ind],
-                        rows['intensity'][ind] * 100,
                         rows['crashed'][ind],
                     ))
 

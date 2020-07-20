@@ -89,9 +89,6 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     X_train, y_train = shuffle(X_train, y_train, random_state=0)
     X_valid, y_valid = shuffle(X_valid, y_valid, random_state=0)
 
-    X_train, y_train = X_train[:100], y_train[:100]
-    X_valid, y_valid = X_valid[:10], y_valid[:10]
-
     train_generator = Generator(X_train, y_train, True, args)
     validation_generator = Generator(X_valid, y_valid, False, args)
 
