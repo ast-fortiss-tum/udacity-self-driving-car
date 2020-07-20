@@ -21,14 +21,14 @@ def load_image(data_dir, image_file):
     """
     Load RGB images from a file
     """
-    image_dir = data_dir
+    image_dir = os.path.join('datasets', data_dir)
     local_path = "/".join(image_file.split("/")[-4:-1]) + "/" + image_file.split("/")[-1]
     img_path = "{0}/{1}".format(image_dir, local_path)
     try:
         return mpimg.imread(img_path)
     except FileNotFoundError:
         print("File not found: %s" % image_file)
-        return None
+        exit()
 
 
 def crop(image):
