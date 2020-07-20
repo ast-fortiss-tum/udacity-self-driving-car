@@ -28,6 +28,14 @@ source udacity-self-driving-car/bin/activate
 pip install -r requirements.txt
 ```
 
+## Suggested Setup
+
+We have implemented and tested the simulator on Windows and MacOS Mojave. When executed on the Mac, the simulator seems to suffer from a performance bug (described in this [issue](https://github.com/udacity/self-driving-car-sim/issues/46)), which seems to be due to [Unity v.5.5.6f1](https://forum.unity.com/threads/unaccounted-time-between-start-of-frame-and-camera-render.444095/). However, after exausting testing, we have found this configuration to be optimal for execution on Mac and Windows alike:
+
+* keras==2.2.4
+* tensorflow=1.14.0
+* numpy==1.16.0
+
 ## Usage
 
 ### Run a pretrained model in the original Udacity simulator
