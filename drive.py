@@ -16,14 +16,13 @@ from warnings import simplefilter
 simplefilter(action='ignore', category=FutureWarning)
 
 import numpy as np
-
+import tensorflow as tf
 import socketio
 import eventlet.wsgi
 from PIL import Image
 from flask import Flask
 from io import BytesIO
 
-from keras.models import load_model
 from utils import rmse
 from variational_autoencoder import VariationalAutoencoder
 
@@ -48,7 +47,7 @@ def telemetry(sid, data):
         wayPoint = int(data["currentWayPoint"])
         lapNumber = int(data["lapNumber"])
 
-        # Cross-Track Error
+        # Cross-Track Error: distance from the center of the lane
         cte = float(data["cte"])
 
         # whether an OBE or crash occurred
@@ -79,7 +78,7 @@ def telemetry(sid, data):
             image = utils.preprocess(image)  # apply the pre-processing
             image = np.array([image])  # the model expects 4D array
 
-            # predict the steering angle for the image
+            # predict the steering angle for the given image
             steering_angle = float(model.predict(image, batch_size=1))
 
             # lower the throttle as the speed increases
@@ -94,7 +93,7 @@ def telemetry(sid, data):
 
             if loss > args.threshold * 1.1:
                 confidence = -1
-            elif loss > args.threshold and loss <= args.threshold * 1.1:
+            elif args.threshold < loss <= args.threshold * 1.1:
                 confidence = 0
             else:
                 confidence = 1
@@ -102,8 +101,6 @@ def telemetry(sid, data):
             throttle = 1.0 - steering_angle ** 2 - (speed / speed_limit) ** 2
 
             global frame_id
-
-            print('steering_angle: {} - cte: {}'.format(steering_angle, cte))
 
             send_control(steering_angle, throttle, confidence, loss, args.max_laps)
             if args.data_dir:
@@ -165,10 +162,12 @@ if __name__ == '__main__':
         print('{:<20} := {}'.format(key, value))
     print('-' * 30)
 
+    path = os.path.join(os.getcwd(), 'models', args.model)
+
     if "chauffeur" in args.model:
-        model = load_model(args.model, custom_objects={"rmse": rmse})
+        model = tf.keras.models.load_model(path, custom_objects={"rmse": rmse})
     else:
-        model = load_model(args.model)
+        model = tf.keras.models.load_model(path)
 
     MAX_SPEED = args.speed
     MIN_SPEED = 10
