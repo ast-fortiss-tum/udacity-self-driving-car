@@ -4,3 +4,5 @@ simulations
 sao
 udacity-self-driving-car
 models
+datasets
+*.DS_Store
