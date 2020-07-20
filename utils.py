@@ -27,7 +27,8 @@ def load_image(data_dir, image_file):
     try:
         return mpimg.imread(img_path)
     except FileNotFoundError:
-        print("")
+        print("File not found: %s" % image_file)
+        return None
 
 
 def crop(image):
@@ -53,7 +54,7 @@ def rgb2yuv(image):
 
 def preprocess(image):
     """
-    Combine all preprocess functions into one
+    Combine all preprocessing functions into one
     """
     image = crop(image)
     image = resize(image)
@@ -142,11 +143,15 @@ def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=
     (The steering angle is associated with the center image)
     """
     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
-    image, steering_angle = random_flip(image, steering_angle)
-    image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
-    image = random_shadow(image)
-    image = random_brightness(image)
-    return image, steering_angle
+
+    if image is None:
+        return None, None
+    else:
+        image, steering_angle = random_flip(image, steering_angle)
+        image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
+        image = random_shadow(image)
+        image = random_brightness(image)
+        return image, steering_angle
 
 
 def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training):
@@ -175,9 +180,9 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
 
 
 def rmse(y_true, y_pred):
-    '''
+    """
     Calculates RMSE
-    '''
+    """
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
 
