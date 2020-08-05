@@ -4,7 +4,10 @@ import logging
 import os
 from datetime import datetime
 
+from tqdm import tqdm
+
 import utils
+from utils import s2b
 
 logging.disable(logging.WARNING)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -55,10 +58,15 @@ def telemetry(sid, data):
         brake = float(data["brake"])
         # print("brake: %.2f" % brake)
 
-        # intensity
-        # intensity = float(data["intensity"])
-        intensity = 0
-        # print("intensity: %.2f" % intensity)
+        # the distance driven by the car
+        distance = float(data["distance"])
+
+        # the time driven by the car
+        sim_time = int(data["sim_time"])
+        # print(sim_time)
+
+        # the angular difference
+        ang_diff = float(data["ang_diff"])
 
         # whether an OBE or crash occurred
         isCrash = int(data["crash"])
@@ -89,7 +97,36 @@ def telemetry(sid, data):
             image = np.array([image])  # the model expects 4D array
 
             # predict the steering angle for the image
-            steering_angle = float(model.predict(image, batch_size=1))
+            if args.mc:
+                batch_size = 128  # batch_size used for training
+                for batch_id in tqdm(range(batch_size)):
+
+                    # take batch of data
+                    x = [image for i in range(batch_size)]
+
+                    # init empty predictions
+                    y_ = np.zeros(batch_size)
+
+                    for sample_id in range(batch_size):
+                        # save predictions from a sample pass
+                        y_[sample_id] = model.predict(x, batch_size)
+
+                    # average over all passes if the final steering angle
+                    steering_angle = y_.mean(axis=0)
+                    # evaluate against labels
+                    uncertainty = y_.var(axis=0)
+
+                    steering_angles = float(model.predict(image, batch_size=128))
+                    steering_angle_1 = steering_angles.mean(axis=0)
+                    uncertainty_1 = steering_angles.var(axis=0)
+
+                    # Generate predictive samples
+                    # batch_generator = data.Dataset.from_tensor_slices(x).repeat(count=sample_size).batch(batch_size)
+                    # mc_samples = model.predict(batch_generator)
+                    # assert mc_samples.shape[0] == sample_size
+                    # assert mc_samples.shape[1] == num_classes
+            else:
+                steering_angle = float(model.predict(image, batch_size=1))
 
             # lower the throttle as the speed increases
             # if the speed is above the current speed limit, we are on a downhill.
@@ -165,8 +202,8 @@ if __name__ == '__main__':
     parser.add_argument('-threshold', help='threshold for the outlier detector', dest='threshold', type=float,
                         default=0.035)
     parser.add_argument('-s', help='speed', dest='speed', type=int, default=35)
-    parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=2)
-
+    parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=1)
+    parser.add_argument('-mc', help='whether the model has MC Dropout', dest='has_mc', type=s2b, default='false')
     args = parser.parse_args()
 
     print('-' * 30)
