@@ -10,9 +10,10 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.layers import Conv2D, Dropout, Dense, Flatten
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.regularizers import l2
 
 from batch_generator import Generator
-from utils import INPUT_SHAPE
+from utils import INPUT_SHAPE, s2b
 
 np.random.seed(0)
 
@@ -21,11 +22,18 @@ def load_data(args):
     """
     Load training data and split it into training and validation set
     """
+
     tracks = ["track1", "track2", "track3"]
     drive = ["normal", "reverse", "sport_normal", "sport_reverse"]
 
+    x_train = None
+    y_train = None
+    x_valid = None
+    y_valid = None
     x = None
     y = None
+    path = None
+
     for track in tracks:
         for drive_style in drive:
             try:
@@ -42,34 +50,61 @@ def load_data(args):
                 exit()
 
     try:
-        X_train, X_valid, y_train, y_valid = train_test_split(x, y, test_size=args.test_size, random_state=0)
+        x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=args.test_size, random_state=0)
     except TypeError:
         print("Missing header to csv files")
         exit()
 
-    print("Train dataset: " + str(len(X_train)) + " elements")
-    print("Test dataset: " + str(len(X_valid)) + " elements")
-    return X_train, X_valid, y_train, y_valid
+    print("Train dataset: " + str(len(x_train)) + " elements")
+    print("Test dataset: " + str(len(x_valid)) + " elements")
+    return x_train, x_valid, y_train, y_valid
 
 
 def build_model(args):
-    """
-    Modified NVIDIA model
-    """
-    model = Sequential()
-    model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=INPUT_SHAPE))
-    model.add(Conv2D(24, (5, 5), activation='elu', strides=(2, 2)))
-    model.add(Conv2D(36, (5, 5), activation='elu', strides=(2, 2)))
-    model.add(Conv2D(48, (5, 5), activation='elu', strides=(2, 2)))
-    model.add(Conv2D(64, (3, 3), activation='elu'))
-    model.add(Conv2D(64, (3, 3), activation='elu'))
-    model.add(Dropout(args.keep_prob))
-    model.add(Flatten())
-    model.add(Dense(100, activation='elu'))
-    model.add(Dense(50, activation='elu'))
-    model.add(Dense(10, activation='elu'))
-    model.add(Dense(1))
-    model.summary()
+    if args.mc:
+        """
+        Modified NVIDIA model by Michelmore et al.
+        Trained for 50 epochs with batch size=128, no data augmentation.
+        """
+        model = Sequential()
+        model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=INPUT_SHAPE))
+        model.add(Conv2D(24, (5, 5), activation='relu', strides=(2, 2)), kernel_regularizer=l2(l2=1.0e-6))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Conv2D(36, (5, 5), activation='relu', strides=(2, 2)), kernel_regularizer=l2(l2=1.0e-6))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Conv2D(48, (5, 5), activation='relu', strides=(2, 2), kernel_regularizer=l2(l2=1.0e-6)))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Conv2D(64, (3, 3), activation='relu'), kernel_regularizer=l2(l2=1.0e-6))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Conv2D(64, (3, 3), activation='relu', kernel_regularizer=l2(l2=1.0e-6)))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Flatten())
+        model.add(Dense(100, activation='relu', kernel_regularizer=l2(l2=1.0e-6)))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Dense(50, activation='relu', kernel_regularizer=l2(l2=1.0e-6)))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Dense(10, activation='relu', kernel_regularizer=l2(l2=1.0e-6)))
+        model.add(Dropout(rate=1 - 0.05, training=True))
+        model.add(Dense(1))
+        model.summary()
+    else:
+        """
+        Modified NVIDIA model
+        """
+        model = Sequential()
+        model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=INPUT_SHAPE))
+        model.add(Conv2D(24, (5, 5), activation='elu', strides=(2, 2)))
+        model.add(Conv2D(36, (5, 5), activation='elu', strides=(2, 2)))
+        model.add(Conv2D(48, (5, 5), activation='elu', strides=(2, 2)))
+        model.add(Conv2D(64, (3, 3), activation='elu'))
+        model.add(Conv2D(64, (3, 3), activation='elu'))
+        model.add(Dropout(rate=1 - args.keep_prob))
+        model.add(Flatten())
+        model.add(Dense(100, activation='elu'))
+        model.add(Dense(50, activation='elu'))
+        model.add(Dense(10, activation='elu'))
+        model.add(Dense(1))
+        model.summary()
 
     return model
 
@@ -78,11 +113,17 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     """
     Train the model
     """
-    checkpoint = ModelCheckpoint('models/self-driving-car-{epoch:03d}.h5',
-                                 monitor='val_loss',
-                                 verbose=0,
-                                 save_best_only=args.save_best_only,
-                                 mode='auto')
+    if args.mc:
+        name = 'models/dave2-mc-' + args.data_dir.replace("datasets/", "") + '-{epoch:03d}.h5'
+    else:
+        name = 'models/dave2-' + args.data_dir.replace("datasets/", "") + '-{epoch:03d}.h5'
+
+    checkpoint = ModelCheckpoint(
+        name,
+        monitor='val_loss',
+        verbose=0,
+        save_best_only=args.save_best_only,
+        mode='auto')
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=args.learning_rate), metrics=['mse'])
 
@@ -103,13 +144,6 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
               callbacks=[checkpoint],
               verbose=1)
 
-    def s2b(s):
-        """
-        Converts a string to boolean value
-        """
-        s = s.lower()
-        return s == 'true' or s == 'yes' or s == 'y' or s == '1'
-
     if __name__ == '__main__':
         """
         Load train/validation data set and train the model
@@ -122,6 +156,7 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
         parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=128)
         parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='true')
         parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
+        parser.add_argument('-mc', help='whether to use the MC Dropout model', dest='mc', type=s2b, default='false')
         args = parser.parse_args()
 
         print('-' * 30)

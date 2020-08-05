@@ -16,7 +16,9 @@ INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
 csv_fieldnames_improved_simulator = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
                                      "lap", "waypoint", "loss", "cte", "steering_angle", "throttle",
-                                     "speed", "brake", "intensity", "crashed", "center", "tot_OBEs", "tot_crashes"]
+                                     "speed", "brake", "crashed",
+                                     "distance", "time", "ang_diff",  # newly added
+                                     "center", "tot_OBEs", "tot_crashes"]
 
 
 def load_image(data_dir, image_file):
@@ -220,6 +222,7 @@ def create_output_dir(args, fieldnames):
     else:
         shutil.rmtree(csv_path)
         os.makedirs(path)
+        create_csv_results_file_header(csv_path, fieldnames)
 
 
 def load_autoencoder(model):
@@ -239,3 +242,11 @@ def load_driving_data(args: object) -> object:
         exit()
 
     return data_df
+
+
+def s2b(s):
+    """
+    Converts a string to boolean value
+    """
+    s = s.lower()
+    return s == 'true' or s == 'yes' or s == 'y' or s == '1'

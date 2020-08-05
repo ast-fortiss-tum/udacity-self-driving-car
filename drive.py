@@ -103,7 +103,7 @@ def telemetry(sid, data):
 
             if loss > args.threshold * 1.1:
                 confidence = -1
-            elif loss > args.threshold and loss <= args.threshold * 1.1:
+            elif args.threshold < loss <= args.threshold * 1.1:
                 confidence = 0
             else:
                 confidence = 1
@@ -120,7 +120,9 @@ def telemetry(sid, data):
                 utils.writeCsvLine(csv_path,
                                    [frame_id, args.model, args.anomaly_detector, args.threshold, args.sim_name,
                                     lapNumber, wayPoint, loss, cte, steering_angle, throttle, speed,
-                                    brake, intensity, isCrash, image_path, number_obe, number_crashes])
+                                    brake, isCrash,
+                                    distance, sim_time, ang_diff,  # new metrics
+                                    image_path, number_obe, number_crashes])
 
                 frame_id = frame_id + 1
 
@@ -154,8 +156,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Remote Driving - Data Collection')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,
-                        default='')
-    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='track1-foggy-adaptive')
+                        default='simulations')
+    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='trial')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
                         default="models/dave2-dataset5-823.h5")
     parser.add_argument('-ad', help='path to the anomaly detector model', dest='anomaly_detector', type=str,
