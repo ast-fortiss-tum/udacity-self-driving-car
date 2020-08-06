@@ -50,6 +50,20 @@ def telemetry(sid, data):
         # Cross-Track Error: distance from the center of the lane
         cte = float(data["cte"])
 
+        # brake
+        brake = float(data["brake"])
+        # print("brake: %.2f" % brake)
+
+        # the distance driven by the car
+        distance = float(data["distance"])
+
+        # the time driven by the car
+        sim_time = int(data["sim_time"])
+        # print(sim_time)
+
+        # the angular difference
+        ang_diff = float(data["ang_diff"])
+
         # whether an OBE or crash occurred
         isCrash = int(data["crash"])
 
@@ -107,7 +121,9 @@ def telemetry(sid, data):
                 csv_path = os.path.join(args.data_dir, args.sim_name)
                 utils.writeCsvLine(csv_path,
                                    [frame_id, args.model, args.anomaly_detector, args.threshold, args.sim_name,
-                                    lapNumber, wayPoint, loss, cte, steering_angle, throttle, speed, isCrash,
+                                    lapNumber, wayPoint, loss, cte, steering_angle, throttle, speed,
+                                    brake, isCrash,
+                                    distance, sim_time, ang_diff,  # new metrics
                                     image_path, number_obe, number_crashes])
 
                 frame_id = frame_id + 1

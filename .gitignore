@@ -6,3 +6,6 @@ udacity-self-driving-car
 models
 datasets
 *.DS_Store
+history-training*.png
+self-driving-car-*.h5
+driving_metrics_values.csv

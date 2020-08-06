@@ -5,6 +5,7 @@ import shutil
 import cv2
 import matplotlib.image as mpimg
 import numpy as np
+import pandas as pd
 from keras import backend as K
 
 # IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3
@@ -12,9 +13,25 @@ IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
-csv_fieldnames_improved_simulator = ["FrameId", "Self Driving Model", "Anomaly Detector", "Threshold", "Track Name",
-                                     "Lap Number", "Check Point", "Loss", "CTE", "Steering Angle", "Throttle", "Brake",
-                                     "Speed", "Crashed", "center", "Tot OBEs", "Tot Crashes"]
+csv_fieldnames_improved_simulator = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
+                                     "lap", "waypoint", "loss", "cte", "steering_angle", "throttle",
+                                     "speed", "brake", "crashed",
+                                     "distance", "time", "ang_diff",  # newly added
+                                     "center", "tot_OBEs", "tot_crashes"]
+
+
+def load_simulation_data(csvFile) -> object:
+    data_df = None
+    path = None
+    try:
+        path = os.path.join(csvFile)
+        # print(path)
+        data_df = pd.read_csv(path, keep_default_na=False)
+    except FileNotFoundError:
+        print("Unable to read file %s" % path)
+        exit()
+
+    return data_df
 
 
 def load_image(data_dir, image_file):
@@ -109,7 +126,7 @@ def random_shadow(image):
     xm, ym = np.mgrid[0:IMAGE_HEIGHT, 0:IMAGE_WIDTH]
 
     # mathematically speaking, we want to set 1 below the line and zero otherwise
-    # Our coordinate is up side down.  So, the above the line: 
+    # Our coordinate is up side down.  So, the above the line:
     # (ym-y1)/(xm-x1) > (y2-y1)/(x2-x1)
     # as x2 == x1 causes zero-division problem, we'll write it in the below form:
     # (ym-y1)*(x2-x1) - (y2-y1)*(xm-x1) > 0

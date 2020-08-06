@@ -9,19 +9,21 @@ from keras.models import Sequential
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
-import logging
-logging.disable(logging.WARNING)
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-# import warnings filter
-from warnings import simplefilter
-
-# ignore all future warnings
-simplefilter(action='ignore', category=FutureWarning)
+# import logging
+#
+# logging.disable(logging.WARNING)
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+#
+# # import warnings filter
+# from warnings import simplefilter
+#
+# # ignore all future warnings
+# simplefilter(action='ignore', category=FutureWarning)
 from sklearn.utils import shuffle
 
 from batch_generator import Generator
 from utils import INPUT_SHAPE
+import matplotlib.pyplot as plt
 
 np.random.seed(0)
 
@@ -30,8 +32,8 @@ def load_data(args):
     """
     Load training data and split it into training and validation set
     """
-    tracks = ["track1"]
-    drive = ["normal", "reverse", "recovery"]
+    tracks = ["track1", "track2", "track3"]
+    drive = ["normal", "reverse", "recovery", "sport_normal", "sport_reverse"]
 
     x = None
     y = None
@@ -97,12 +99,11 @@ def train_model(model, args, x_train, x_valid, y_train, y_valid):
     """
     Train the model
     """
-    checkpoint = ModelCheckpoint('self-driving-car-{epoch:03d}.h5',
+    checkpoint = ModelCheckpoint('self-driving-car-train' + str(args.train_num) + '-{epoch:03d}.h5',
                                  monitor='val_loss',
                                  verbose=0,
                                  save_best_only=args.save_best_only,  # save the model only if the val_loss gets low
-                                 mode='auto',
-                                 period=5)  # if period=1, it saves all intermediate models
+                                 mode='auto')
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=args.learning_rate))
 
@@ -114,14 +115,25 @@ def train_model(model, args, x_train, x_valid, y_train, y_valid):
     train_generator = Generator(x_train, y_train, True, args)
     validation_generator = Generator(x_valid, y_valid, False, args)
 
-    model.fit_generator(train_generator,
-                        validation_data=validation_generator,
-                        epochs=args.nb_epoch,
-                        callbacks=[checkpoint],
-                        verbose=1)
+    history = model.fit_generator(train_generator,
+                                  validation_data=validation_generator,
+                                  epochs=args.nb_epoch,
+                                  callbacks=[checkpoint],
+                                  verbose=1)
+
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.title('training' + str(args.train_num))
+    plt.legend(['train', 'val'], loc='upper left')
+    # plt.show()
+    plt.savefig('history-training' + str(args.train_num) + '.png')
 
     # save the last model anyway (might not be the best)
-    model.save("models/model-final.h5")
+    model.save("models/model-train" + str(args.train_num) + "-final.h5")
 
 
 def s2b(s):
@@ -145,6 +157,7 @@ def main():
     parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=64)
     parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='true')
     parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
+    parser.add_argument('-tn', help='training num', dest='train_num', type=int, default=103)
     args = parser.parse_args()
 
     print('-' * 30)
@@ -156,7 +169,13 @@ def main():
 
     data = load_data(args)
     model = build_model(args)
+
+    import time
+    start = time.process_time()
     train_model(model, args, *data)
+    end = time.process_time()
+
+    print("training finished in %.2f seconds" % (end - start))
 
 
 if __name__ == '__main__':
