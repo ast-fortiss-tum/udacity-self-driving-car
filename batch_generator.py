@@ -1,16 +1,16 @@
-from tensorflow.keras.utils import Sequence
 import numpy as np
+from keras.utils import Sequence
+
 from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS, load_image, augment, preprocess
 
 
 class Generator(Sequence):
 
-    def __init__(self, path_to_pictures, steering_angles, is_training, normalize, args):
+    def __init__(self, path_to_pictures, steering_angles, is_training, args):
         self.batch_size = args.batch_size
         self.path_to_pictures = path_to_pictures
         self.steering_angles = steering_angles
         self.is_training = is_training
-        self.normalize = normalize
         self.args = args
 
     def __getitem__(self, index):
@@ -30,10 +30,6 @@ class Generator(Sequence):
                 image, steering_angle = augment(self.args.data_dir, center, left, right, steering_angle)
             else:
                 image = load_image(self.args.data_dir, center)
-
-            # normalization
-            if self.normalize:
-                image = image / 127.5 - 1.0
 
             # add the image and steering angle to the batch
             images[i] = preprocess(image)

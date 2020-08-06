@@ -114,16 +114,11 @@ def train_model(model, args, x_train, x_valid, y_train, y_valid):
     train_generator = Generator(x_train, y_train, True, args)
     validation_generator = Generator(x_valid, y_valid, False, args)
 
-    history = model.fit(generator=train_generator,
-                        validation_data=validation_generator,
-                        samples_per_epoch=train_generator.nb_samples,
-                        epochs=args.nb_epoch,
-                        nb_val_samples=validation_generator.nb_samples,
-                        use_multiprocessing=False,
-                        max_queue_size=10,
-                        workers=4,
-                        callbacks=[checkpoint],
-                        verbose=1)
+    history = model.fit_generator(train_generator,
+                                  validation_data=validation_generator,
+                                  epochs=args.nb_epoch,
+                                  callbacks=[checkpoint],
+                                  verbose=1)
 
     # summarize history for loss
     plt.plot(history.history['loss'])
