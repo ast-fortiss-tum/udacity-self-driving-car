@@ -15,7 +15,7 @@ INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
 csv_fieldnames_improved_simulator = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
-                                     "lap", "waypoint", "loss", "cte", "steering_angle", "throttle",
+                                     "lap", "waypoint", "loss", "uncertainty", "cte", "steering_angle", "throttle",
                                      "speed", "brake", "crashed",
                                      "distance", "time", "ang_diff",  # newly added
                                      "center", "tot_OBEs", "tot_crashes"]
@@ -25,13 +25,14 @@ def load_image(data_dir, image_file):
     """
     Load RGB images from a file
     """
-    image_dir = data_dir
+    image_dir = 'datasets/' + data_dir
     local_path = "/".join(image_file.split("/")[-4:-1]) + "/" + image_file.split("/")[-1]
     img_path = "{0}/{1}".format(image_dir, local_path)
     try:
         return mpimg.imread(img_path)
     except FileNotFoundError:
-        print("")
+        print(image_file + " not found")
+        # exit(1)
 
 
 def crop(image):

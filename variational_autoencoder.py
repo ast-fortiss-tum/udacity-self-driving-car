@@ -2,7 +2,9 @@ from tensorflow.keras import Input, Model
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda
 
-IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 80, 160, 3  # autoencoder uses custom image size
+# IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 80, 160, 3  # autoencoder uses custom image size
+IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3  # for VAE-ICSE20.h5
+
 
 def sampling(args):
     """Reparameterization trick by sampling fr an isotropic unit Gaussian.
@@ -22,7 +24,8 @@ def sampling(args):
 
 class VariationalAutoencoder:
 
-    def __init__(self, model_name, intermediate_dim=512, latent_dim=2):
+    def __init__(self, model_name, intermediate_dim=512,
+                 latent_dim=2):  # latent_dim=4 VAE-ICSE20.h5; latent_dim=2 VAE-ICSE20-100-RETRAINED
         self.model_name = model_name
         self.intermediate_dim = intermediate_dim
         self.latent_dim = latent_dim
