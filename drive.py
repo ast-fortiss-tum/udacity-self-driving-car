@@ -161,7 +161,7 @@ if __name__ == '__main__':
                         default='simulations')
     parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='trial')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
-                        default="models/model.h5")
+                        default="model.h5")
     parser.add_argument('-ad', help='path to the anomaly detector model', dest='anomaly_detector', type=str,
                         default="sao/VAE-ICSE20.h5")  # DO NOT CHANGE THIS
     parser.add_argument('-threshold', help='threshold for the outlier detector', dest='threshold', type=float,
