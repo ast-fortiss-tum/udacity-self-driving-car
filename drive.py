@@ -3,28 +3,25 @@ import base64
 import logging
 import os
 from datetime import datetime
+from io import BytesIO
+from warnings import simplefilter
+
+import eventlet.wsgi
+import numpy as np
+import socketio
+import tensorflow as tf
+from PIL import Image
+from flask import Flask
 
 import utils
+from utils import rmse
+from variational_autoencoder import VariationalAutoencoder
 
 logging.disable(logging.WARNING)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-# import warnings filter
-from warnings import simplefilter
-
 # ignore all future warnings
 simplefilter(action='ignore', category=FutureWarning)
-
-import numpy as np
-import tensorflow as tf
-import socketio
-import eventlet.wsgi
-from PIL import Image
-from flask import Flask
-from io import BytesIO
-
-from utils import rmse
-from variational_autoencoder import VariationalAutoencoder
 
 sio = socketio.Server()
 app = Flask(__name__)
