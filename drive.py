@@ -5,6 +5,9 @@ import os
 from datetime import datetime
 from io import BytesIO
 from warnings import simplefilter
+import sys
+import signal
+import subprocess
 
 import eventlet.wsgi
 import numpy as np
@@ -36,6 +39,13 @@ frame_id = 0
 @sio.on('telemetry')
 def telemetry(sid, data):
     if data:
+
+        if int(data["lapNumber"]) > args.max_laps:
+            # kill(proc.pid)
+            sio.emit('shutdown', data={}, skip_sid=True)  # DO NOT CHANGE THIS
+
+            # os.kill(proc.pid, signal.SIGKILL)
+            # exit(0)
 
         # The current speed of the car
         speed = float(data["speed"])
@@ -138,6 +148,13 @@ def connect(sid, environ):
     send_control(0, 0, 1, 0, 1)
 
 
+@sio.on('disconnect')
+def disconnect(sid):
+    print("disconnect ", sid)
+    sio.disconnect(sid)
+    sys.exit()
+
+
 def send_control(steering_angle, throttle, confidence, loss, max_laps):  # DO NOT CHANGE THIS
     sio.emit(
         "steer",
@@ -151,19 +168,27 @@ def send_control(steering_angle, throttle, confidence, loss, max_laps):  # DO NO
         skip_sid=True)
 
 
+def kill(proc_pid):
+    import psutil
+    process = psutil.Process(proc_pid)
+    for proc in process.children(recursive=True):
+        proc.kill()
+    process.kill()
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Remote Driving - Data Collection')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,
-                        default='simulations')
-    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='trial')
+                        default='')
+    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='dm-track1-35')
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
                         default="model.h5")
     parser.add_argument('-ad', help='path to the anomaly detector model', dest='anomaly_detector', type=str,
                         default="sao/VAE-ICSE20.h5")  # DO NOT CHANGE THIS
     parser.add_argument('-threshold', help='threshold for the outlier detector', dest='threshold', type=float,
                         default=0.035)
-    parser.add_argument('-s', help='speed', dest='speed', type=int, default=30)
+    parser.add_argument('-s', help='speed', dest='speed', type=int, default=35)
     parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=1)
 
     args = parser.parse_args()
@@ -174,6 +199,12 @@ if __name__ == '__main__':
     for key, value in vars(args).items():
         print('{:<20} := {}'.format(key, value))
     print('-' * 30)
+
+    # os.open("/Users/astocco/Desktop/Work/Precrime/simulators/sim-quality-metrics.app/Contents/MacOS/sim-quality-metrics")
+
+    FileName = "/Users/astocco/Desktop/Work/Precrime/simulators/sim-quality-metrics-new.app/Contents/MacOS/sim-quality-metrics-new"
+    # proc = subprocess.call(['open', FileName], shell=True)
+    proc = subprocess.Popen([FileName, ""], shell=True)
 
     path = os.path.join(os.getcwd(), 'models', args.model)
 
@@ -201,3 +232,5 @@ if __name__ == '__main__':
 
     # deploy as an eventlet WSGI server
     eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
+
+    app.do_teardown_appcontext()
