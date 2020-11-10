@@ -152,6 +152,8 @@ def connect(sid, environ):
 def disconnect(sid):
     print("disconnect ", sid)
     sio.disconnect(sid)
+    server.stop()
+    server.wait()
     sys.exit()
 
 
@@ -231,6 +233,7 @@ if __name__ == '__main__':
     app = socketio.Middleware(sio, app)
 
     # deploy as an eventlet WSGI server
-    eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
+    server = eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
 
-    app.do_teardown_appcontext()
+    server.stop()
+    server.wait()
