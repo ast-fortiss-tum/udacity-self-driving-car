@@ -6,6 +6,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tensorflow
 from tqdm import tqdm
 
 import utils
@@ -29,8 +30,9 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
     try:
         losses = np.load(cache_path)
         losses = losses.tolist()
+        print("Found losses data for " + cached_file_name)
     except FileNotFoundError:
-        print("Losses data for " + cached_file_name + " not founded. Computing...")
+        print("Losses data for " + cached_file_name + " not found. Computing...")
         for x in tqdm(dataset):
             x = utils.resize(x)
             x = normalize_and_reshape(x)
@@ -119,11 +121,12 @@ def compute_losses_vae(cfg, vae, name, images):
     if not my_file.exists():
         print("Model %s does not exists. Do training first." % str(name))
         return
+    else:
+        print("Found model %s. Loading..." % str(name))
+        model = tensorflow.keras.models.load_model(my_file)
 
     print("Start computing reconstruction losses.")
     start = time.time()
-
-    model = vae.create_autoencoder()
 
     images = images
     losses = load_or_compute_losses(model, images, name + "-losses.npy", False)
