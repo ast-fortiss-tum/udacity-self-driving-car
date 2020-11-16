@@ -17,7 +17,7 @@ SAVE_BEST_ONLY = True  # only saves when the model is considered the "best" acco
 LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
 
 # autoencoder-based self-assessement oracle settings
-NUM_EPOCHS_SAO_MODEL = 5  # training epochs for the autoencoder-based self-assessment oracle
+NUM_EPOCHS_SAO_MODEL = 2  # training epochs for the autoencoder-based self-assessment oracle
 USE_ONLY_CENTER_IMG = False  # train the autoencoder-based self-assessment oracle only using front-facing camera images
 USE_CROP = True  # crop the images the same way as the car
 LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle

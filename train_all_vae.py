@@ -16,7 +16,11 @@ if __name__ == '__main__':
     x_train, x_test = load_data_for_vae(cfg)
 
     for track in tracks:
+        cfg.TRACK = track
         for only in only_center_images:
+            cfg.USE_ONLY_CENTER_IMG = only
             for crop in use_crop:
+                cfg.USE_CROP = crop
                 for loss in loss_func:
+                    cfg.LOSS_SAO_MODEL = loss
                     run_training(cfg, x_test, x_train)

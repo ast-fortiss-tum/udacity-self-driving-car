@@ -28,7 +28,7 @@ class Generator(Sequence):
         for i, paths in enumerate(batch_paths):
 
             if self.cfg.USE_ONLY_CENTER_IMG:
-                center = batch_paths[i]
+                center = batch_paths[i][0]
                 image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
             else:
                 center, left, right = batch_paths[i]

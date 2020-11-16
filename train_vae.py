@@ -102,7 +102,7 @@ def train_vae_model(cfg, vae, x_train, x_test):
     plt.show()
 
     # save the last model (might not be the best)
-    model.save("sao/" + str(vae.model_name) + "-final.h5")
+    model.save("sao/" + str(vae.model_name) + ".h5")
 
 
 def run_training(cfg, x_test, x_train):
@@ -120,7 +120,7 @@ def run_training(cfg, x_test, x_train):
         print("cfg.USE_CROP = " + str(cfg.USE_CROP) + ". Using the entire image")
         use_crop = 'nocrop'
 
-    name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
+    name = "VAE-" + cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
     vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
     train_vae_model(cfg, vae, x_train, x_test)
 
