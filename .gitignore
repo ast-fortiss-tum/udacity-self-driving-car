@@ -10,3 +10,4 @@ venv-driving-quality
 history*.png
 driving_metrics_values.csv
 self-driving-car*.h5
+plots

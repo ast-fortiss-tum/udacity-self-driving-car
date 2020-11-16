@@ -26,6 +26,8 @@ def load_data_for_vae(cfg):
 
     print("Loading training set " + str(tracks) + str(drive))
 
+    start = time.time()
+
     x = None
     path = None
     x_train = None
@@ -60,6 +62,9 @@ def load_data_for_vae(cfg):
     except TypeError:
         print("Missing header to csv files")
         exit()
+
+    duration_train = time.time() - start
+    print("Loading training set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
     print("Data set: " + str(len(x)) + " elements")
     print("Training set: " + str(len(x_train)) + " elements")
@@ -111,7 +116,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     model.save("sao/" + str(vae.model_name) + ".h5")
 
 
-def run_training(cfg, x_test, x_train):
+def setup_vae(cfg):
     if cfg.USE_ONLY_CENTER_IMG:
         print("cfg.USE_ONLY_CENTER_IMG = " + str(cfg.USE_ONLY_CENTER_IMG) + ". Using only front-facing camera images")
         use_center = '-centerimg-'
@@ -126,8 +131,14 @@ def run_training(cfg, x_test, x_train):
         print("cfg.USE_CROP = " + str(cfg.USE_CROP) + ". Using the entire image")
         use_crop = 'nocrop'
 
-    name = "VAE-" + cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
+    name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
     vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
+
+    return vae, name
+
+
+def run_training(cfg, x_test, x_train):
+    vae, name = setup_vae(cfg)
     train_vae_model(cfg, vae, name, x_train, x_test)
 
 
