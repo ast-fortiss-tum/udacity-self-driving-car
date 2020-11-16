@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,10 +67,15 @@ def load_data_for_vae(cfg):
     return x_train, x_test
 
 
-def train_vae_model(cfg, vae, x_train, x_test):
+def train_vae_model(cfg, vae, name, x_train, x_test):
     """
     Train the VAE model
     """
+
+    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name) + '.h5')
+    if my_file.exists():
+        print("Model %s already exists. Quit training." % str(name))
+        return
 
     start = time.time()
 
@@ -102,7 +108,7 @@ def train_vae_model(cfg, vae, x_train, x_test):
     plt.show()
 
     # save the last model (might not be the best)
-    model.save("sao/" + str(vae.model_name) + "-final.h5")
+    model.save("sao/" + str(vae.model_name) + ".h5")
 
 
 def run_training(cfg, x_test, x_train):
@@ -122,7 +128,7 @@ def run_training(cfg, x_test, x_train):
 
     name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
     vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
-    train_vae_model(cfg, vae, x_train, x_test)
+    train_vae_model(cfg, vae, name, x_train, x_test)
 
 
 def main():

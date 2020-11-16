@@ -1,6 +1,7 @@
 # project settings
 TRAINING_DATA_DIR = "datasets"  # root folder for all driving training sets
 SIMULATION_DATA_DIR = "dataset5"  # the driving training set to use
+SAO_MODELS_DIR = "sao"  # root folder for all autoencoder-based self-assessment oracle models
 TEST_SIZE = 0.05  # split of training data used for the validation set (keep it low)
 
 TRACK = ["track1"]  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
@@ -17,7 +18,7 @@ SAVE_BEST_ONLY = True  # only saves when the model is considered the "best" acco
 LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
 
 # autoencoder-based self-assessement oracle settings
-NUM_EPOCHS_SAO_MODEL = 5  # training epochs for the autoencoder-based self-assessment oracle
+NUM_EPOCHS_SAO_MODEL = 1  # training epochs for the autoencoder-based self-assessment oracle
 USE_ONLY_CENTER_IMG = False  # train the autoencoder-based self-assessment oracle only using front-facing camera images
 USE_CROP = True  # crop the images the same way as the car
 LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
