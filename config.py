@@ -8,6 +8,9 @@ import types
 class Config:
 
     def __init__(self):
+        self.TRACK = None
+        self.USE_CROP = None
+        self.USE_ONLY_CENTER_IMG = None
         self.LOSS_SAO_MODEL = None
 
     def from_pyfile(self, filename, silent=False):
@@ -42,13 +45,13 @@ class Config:
                 print(attr, ":", getattr(self, attr))
 
 
-def load_config(config_path=None, myconfig="myconfig.txt"):
+def load_config(config_path=None, myconfig="myconfig.py"):
     if config_path is None:
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
-        config_path = os.path.join(main_path, 'config')
+        config_path = os.path.join(main_path, 'myconfig.py')
         if not os.path.exists(config_path):
-            local_config = os.path.join(os.path.curdir, 'config')
+            local_config = os.path.join(os.path.curdir, 'myconfig.py')
             if os.path.exists(local_config):
                 config_path = local_config
 
@@ -58,7 +61,7 @@ def load_config(config_path=None, myconfig="myconfig.txt"):
 
     # look for the optional myconfig.txt in the same path.
     print("myconfig", myconfig)
-    personal_cfg_path = config_path.replace("config.txt", myconfig)
+    personal_cfg_path = config_path.replace("myconfig.py", myconfig)
     if os.path.exists(personal_cfg_path):
         print("loading personal config over-rides from", myconfig)
         personal_cfg = Config()

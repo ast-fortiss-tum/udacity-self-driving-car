@@ -12,6 +12,5 @@ SAVE_BEST_ONLY = True  # only saves when the model is considered the "best" acco
 LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
 TRACK = ["track1"]  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
 TRACK1_DRIVING_STYLES = ["normal", "recovery", "reverse"]
-#TRACK1_DRIVING_STYLES = ["normal"]
 TRACK2_DRIVING_STYLES = ["normal", "recovery", "recovery2", "recovery3", "reverse", "sport_normal", "sport_reverse"]
 TRACK3_DRIVING_STYLES = ["normal", "recovery", "recovery2", "reverse", "sport_normal"]
