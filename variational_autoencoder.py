@@ -4,8 +4,8 @@ from tensorflow.keras import Input, Model
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda
 
-# IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 80, 160, 3  # autoencoder uses custom image size
-IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3  # for VAE-ICSE20.h5
+from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS
+
 original_dim = IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_CHANNELS
 
 
@@ -48,7 +48,7 @@ class VariationalAutoencoder:
     def __init__(self,
                  model_name,
                  intermediate_dim=512,
-                 latent_dim=2,  # latent_dim=4 VAE-ICSE20.h5; latent_dim=2 VAE-ICSE20-100-RETRAINED
+                 latent_dim=2,
                  loss="VAE"):  # [ "VAE", "MSE"]
         self.model_name = model_name
         self.intermediate_dim = intermediate_dim
@@ -74,8 +74,8 @@ class VariationalAutoencoder:
 
         # create decoder model
         latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
-        x = Dense(intermediate_dim, activation='relu')(latent_inputs)
-        outputs = Dense(original_dim, activation='softplus')(x)  # softplus works. softsign?
+        x = Dense(intermediate_dim, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(0.001))(latent_inputs)
+        outputs = Dense(original_dim, activation='sigmoid')(x)
 
         # instantiate the decoder model
         decoder = Model(latent_inputs, outputs, name='decoder')
@@ -88,20 +88,20 @@ class VariationalAutoencoder:
         # custom loss function
         def vae_loss(x, x_decoded_mean):
             """Defines the VAE loss functions as a combination of Xent loss and KL-divergence loss."""
-            rec_loss = losses.binary_crossentropy(x, x_decoded_mean)
+            rec_loss = losses.mean_squared_error(x, x_decoded_mean)
 
             # rec_loss = losses.binary_crossentropy(K.flatten(x), K.flatten(x_decoded_mean)) * IMAGE_WIDTH * IMAGE_HEIGHT
             # rec_loss = losses.mean_squared_error(x, x_decoded_mean)
             kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
 
-            return rec_loss + kl_loss
+            # return rec_loss + kl_loss
             # Total loss = 50 % rec + 50 % KL divergence loss
-            # return K.mean(rec_loss + kl_loss)
+            return K.mean(rec_loss + kl_loss)
 
         # compile the model
         if "VAE" in self.loss:
             print("Using VAE loss")
-            vae.compile(optimizer='rmsprop', loss=vae_loss)
+            vae.compile(optimizer='adadelta', loss=vae_loss)
         elif "MSE" in self.loss:
             print("Using MSE loss")
             vae.compile(optimizer='adam', loss="mean_squared_error")

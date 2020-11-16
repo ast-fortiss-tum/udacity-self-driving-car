@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 from variational_autoencoder import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS, normalize_and_reshape
@@ -23,11 +25,23 @@ class Generator(Sequence):
 
             if self.cfg.USE_ONLY_CENTER_IMG:
                 center = batch_paths[i]
+                image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
             else:
                 center, left, right = batch_paths[i]
 
-            # TODO: add the left and right image as well
-            image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
+                # TODO: add the left and right image as well
+                choices = [0, 1, 2]  # 0=center, 1=left, 2=right
+                choice = random.choice(choices)
+                if choice == 0:
+                    image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
+                elif choice == 1:
+                    image = load_image(self.cfg.SIMULATION_DATA_DIR, left)
+                elif choice == 2:
+                    image = load_image(self.cfg.SIMULATION_DATA_DIR, right)
+                else:
+                    print('wrong image index in vae_batch_generator. Using default\'s 0 (center)')
+                    image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
+
             image = normalize_and_reshape(image)
             images[i] = image
         return images, images

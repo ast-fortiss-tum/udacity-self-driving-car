@@ -38,9 +38,6 @@ def load_data_for_vae(cfg):
                 data_df = pd.read_csv(path)
                 if x is None:
                     if cfg.USE_ONLY_CENTER_IMG:
-                        print(
-                            "cfg.USE_ONLY_CENTER_IMG = " + str(
-                                cfg.USE_ONLY_CENTER_IMG) + ". Loading only front-facing camera images")
                         x = data_df[['center']].values
                     else:
                         print(
@@ -100,7 +97,7 @@ def train_vae_model(cfg, vae, x_train, x_test):
                                   shuffle=True,
                                   epochs=cfg.NUM_EPOCHS_SAO_MODEL,
                                   # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
-                                  callbacks=[checkpoint],
+                                  # callbacks=[checkpoint],
                                   verbose=1)
 
     duration_train = time.time() - start
@@ -108,13 +105,14 @@ def train_vae_model(cfg, vae, x_train, x_test):
 
     # summarize history for loss
     plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
     plt.title('model loss')
-    plt.ylabel('loss')
+    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
     plt.xlabel('epoch')
     plt.title('training VAE (' + str(cfg.NUM_EPOCHS_SAO_MODEL) + ' epochs)')
-    plt.legend(['train'], loc='upper left')
-    plt.show()
+    plt.legend(['train', 'val'], loc='upper left')
     plt.savefig('history-training-' + str(vae.model_name) + '.png')
+    plt.show()
 
     # save the last model (might not be the best)
     model.save("sao/" + str(vae.model_name) + "-final.h5")
@@ -125,7 +123,25 @@ def main():
     cfg.from_pyfile("config")
 
     x_train, x_test = load_data_for_vae(cfg)
-    vae = VariationalAutoencoder(model_name="VAE-track1", loss=cfg.LOSS_SAO_MODEL)
+
+    if cfg.USE_ONLY_CENTER_IMG:
+        print(
+            "cfg.USE_ONLY_CENTER_IMG = " + str(
+                cfg.USE_ONLY_CENTER_IMG) + ". Loading only front-facing camera images")
+        use_center = '-centerimg-'
+    else:
+        use_center = '-allimg-'
+
+    if cfg.USE_CROP:
+        print(
+            "cfg.USE_CROP = " + str(
+                cfg.USE_CROP) + ". Cropping the image")
+        use_crop = 'usecrop'
+    else:
+        use_crop = 'nocrop'
+
+    name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
+    vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
 
     train_vae_model(cfg, vae, x_train, x_test)
 

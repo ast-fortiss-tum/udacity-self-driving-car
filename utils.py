@@ -8,8 +8,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras import backend as K
 
-# IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3
-# IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 80, 160, 3
+RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH = 80, 160
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
@@ -46,7 +45,7 @@ def resize(image):
     """
     Resize the image to the input shape used by the network model
     """
-    return cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT), cv2.INTER_AREA)
+    return cv2.resize(image, (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT), cv2.INTER_AREA)
 
 
 def rgb2yuv(image):
@@ -55,6 +54,15 @@ def rgb2yuv(image):
     """
     # return cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
     return cv2.cvtColor(image.astype('uint8') * 255, cv2.COLOR_RGB2YUV)
+
+
+def preprocess_vae(image):
+    """
+    Combine all preprocess functions into one
+    """
+    image = crop(image)
+    image = resize(image)
+    return image
 
 
 def preprocess(image):
@@ -238,5 +246,5 @@ def get_driving_styles(cfg):
     elif cfg.TRACK == ["track1", "track2", "track3"]:
         return cfg.TRACK1_DRIVING_STYLES + cfg.TRACK2_DRIVING_STYLES + cfg.TRACK3_DRIVING_STYLES
     else:
-        print("Invalid track option within the config file")
+        print("Invalid TRACK option within the config file")
         exit(1)

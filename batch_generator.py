@@ -1,7 +1,7 @@
 import numpy as np
 from keras.utils import Sequence
 
-from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS, load_image, augment, preprocess
+from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, load_image, augment, preprocess
 
 
 class Generator(Sequence):
@@ -19,7 +19,7 @@ class Generator(Sequence):
         batch_paths = self.path_to_pictures[start_index:end_index]
         steering_angles = self.steering_angles[start_index:end_index]
 
-        images = np.empty([len(batch_paths), IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
+        images = np.empty([len(batch_paths), RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS])
         steers = np.empty([len(batch_paths)])
         for i, paths in enumerate(batch_paths):
             center, left, right = batch_paths[i]
