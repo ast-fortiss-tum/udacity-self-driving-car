@@ -155,39 +155,14 @@ def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=
     return image, steering_angle
 
 
-def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training):
-    """
-    Generate training image give image paths and associated steering angles
-    """
-    images = np.empty([batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
-    steers = np.empty(batch_size)
-    while True:
-        i = 0
-        for index in np.random.permutation(image_paths.shape[0]):
-            center, left, right = image_paths[index]
-            steering_angle = steering_angles[index]
-            # augmentation
-            if is_training and np.random.rand() < 0.6:
-                image, steering_angle = augment(data_dir, center, left, right, steering_angle)
-            else:
-                image = load_image(data_dir, center)
-                # add the image and steering angle to the batch
-            images[i] = preprocess(image)
-            steers[i] = steering_angle
-            i += 1
-            if i == batch_size:
-                break
-        yield images, steers
-
-
 def rmse(y_true, y_pred):
-    '''
+    """
     Calculates RMSE
-    '''
+    """
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
 
-def writeCsvLine(filename, row):
+def write_csv_line(filename, row):
     if filename is not None:
         filename += "/driving_log.csv"
         with open(filename, mode='a') as result_file:
@@ -251,3 +226,17 @@ def s2b(s):
     """
     s = s.lower()
     return s == 'true' or s == 'yes' or s == 'y' or s == '1'
+
+
+def get_driving_styles(cfg):
+    if cfg.TRACK == ["track1"]:
+        return cfg.TRACK1_DRIVING_STYLES
+    elif cfg.TRACK == ["track2"]:
+        return cfg.TRACK2_DRIVING_STYLES
+    elif cfg.TRACK == ["track3"]:
+        return cfg.TRACK3_DRIVING_STYLES
+    elif cfg.TRACK == ["track1", "track2", "track3"]:
+        return cfg.TRACK1_DRIVING_STYLES + cfg.TRACK2_DRIVING_STYLES + cfg.TRACK3_DRIVING_STYLES
+    else:
+        print("Invalid track option within the config file")
+        exit(1)

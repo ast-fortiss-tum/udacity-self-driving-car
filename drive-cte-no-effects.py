@@ -104,8 +104,8 @@ def telemetry(sid, data):
             send_control(steering_angle, throttle, args.max_laps)
             if args.data_dir:
                 csv_path = os.path.join(args.data_dir, args.sim_name)
-                utils.writeCsvLine(csv_path,
-                                   [frame_id, args.model, args.anomaly_detector, args.threshold, args.sim_name,
+                utils.write_csv_line(csv_path,
+                                     [frame_id, args.model, args.anomaly_detector, args.threshold, args.sim_name,
                                     lapNumber, wayPoint, 0, cte, steering_angle, throttle, speed,
                                     brake, intensity, isCrash, image_path, number_obe, number_crashes])
 
