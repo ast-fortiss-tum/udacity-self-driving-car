@@ -6,14 +6,13 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 import utils
 from config import Config
 from train_vae import setup_vae
 from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS
-from vae_batch_generator import Generator
-from variational_autoencoder import VariationalAutoencoder, normalize_and_reshape
-from tqdm import tqdm
+from variational_autoencoder import normalize_and_reshape
 
 np.random.seed(0)
 
