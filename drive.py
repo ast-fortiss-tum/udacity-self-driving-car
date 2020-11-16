@@ -7,6 +7,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 import utils
+from config import Config
 from utils import s2b
 
 logging.disable(logging.WARNING)
@@ -27,7 +28,7 @@ from flask import Flask
 from io import BytesIO
 
 from tensorflow.keras.models import load_model
-from utils import rmse
+from utils import rmse, crop, resize
 from variational_autoencoder import VariationalAutoencoder
 
 sio = socketio.Server()
@@ -90,6 +91,10 @@ def telemetry(sid, data):
             image = np.asarray(image)  # from PIL image to numpy array
             image_copy = np.copy(image)
 
+            if cfg.USE_CROP:
+                image_copy = crop(image_copy)
+
+            image_copy = resize(image_copy)
             image_copy = autoenconder_model.normalize_and_reshape(image_copy)
             loss = anomaly_detection.test_on_batch(image_copy, image_copy)
 
@@ -156,10 +161,10 @@ def telemetry(sid, data):
                 csv_path = os.path.join(args.data_dir, args.sim_name)
                 utils.write_csv_line(csv_path,
                                      [frame_id, args.model, args.anomaly_detector, args.threshold, args.sim_name,
-                                    lapNumber, wayPoint, loss, cte, steering_angle, throttle, speed,
-                                    brake, isCrash,
-                                    distance, sim_time, ang_diff,  # new metrics
-                                    image_path, number_obe, number_crashes])
+                                      lapNumber, wayPoint, loss, cte, steering_angle, throttle, speed,
+                                      brake, isCrash,
+                                      distance, sim_time, ang_diff,  # new metrics
+                                      image_path, number_obe, number_crashes])
 
                 frame_id = frame_id + 1
 
@@ -190,6 +195,9 @@ def send_control(steering_angle, throttle, confidence, loss, max_laps):  # DO NO
 
 
 if __name__ == '__main__':
+
+    cfg = Config()
+    cfg.from_pyfile("myconfig.py")
 
     parser = argparse.ArgumentParser(description='Remote Driving - Data Collection')
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,

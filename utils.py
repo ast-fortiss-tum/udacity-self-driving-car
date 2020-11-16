@@ -56,15 +56,6 @@ def rgb2yuv(image):
     return cv2.cvtColor(image.astype('uint8') * 255, cv2.COLOR_RGB2YUV)
 
 
-def preprocess_vae(image):
-    """
-    Combine all preprocess functions into one
-    """
-    image = crop(image)
-    image = resize(image)
-    return image
-
-
 def preprocess(image):
     """
     Combine all preprocess functions into one

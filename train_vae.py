@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.utils import shuffle
+
 import utils
-from vae_batch_generator import Generator
 from config import Config
+from vae_batch_generator import Generator
 from variational_autoencoder import VariationalAutoencoder
 
 np.random.seed(0)
@@ -40,9 +40,6 @@ def load_data_for_vae(cfg):
                     if cfg.USE_ONLY_CENTER_IMG:
                         x = data_df[['center']].values
                     else:
-                        print(
-                            "cfg.USE_ONLY_CENTER_IMG = " + str(
-                                cfg.USE_ONLY_CENTER_IMG) + ". Loading all camera images")
                         x = data_df[['center', 'left', 'right']].values
                 else:
                     if cfg.USE_ONLY_CENTER_IMG:
@@ -76,15 +73,6 @@ def train_vae_model(cfg, vae, x_train, x_test):
 
     start = time.time()
 
-    name = 'sao/temp/' + vae.model_name + '-{epoch:03d}.h5'
-
-    checkpoint = ModelCheckpoint(
-        name,
-        monitor='val_loss',
-        verbose=0,
-        save_best_only=True,
-        mode='auto')
-
     model = vae.create_autoencoder()
 
     x_train = shuffle(x_train, random_state=0)
@@ -97,7 +85,6 @@ def train_vae_model(cfg, vae, x_train, x_test):
                                   shuffle=True,
                                   epochs=cfg.NUM_EPOCHS_SAO_MODEL,
                                   # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
-                                  # callbacks=[checkpoint],
                                   verbose=1)
 
     duration_train = time.time() - start
@@ -118,32 +105,32 @@ def train_vae_model(cfg, vae, x_train, x_test):
     model.save("sao/" + str(vae.model_name) + "-final.h5")
 
 
-def main():
-    cfg = Config()
-    cfg.from_pyfile("config")
-
-    x_train, x_test = load_data_for_vae(cfg)
-
+def run_training(cfg, x_test, x_train):
     if cfg.USE_ONLY_CENTER_IMG:
-        print(
-            "cfg.USE_ONLY_CENTER_IMG = " + str(
-                cfg.USE_ONLY_CENTER_IMG) + ". Loading only front-facing camera images")
+        print("cfg.USE_ONLY_CENTER_IMG = " + str(cfg.USE_ONLY_CENTER_IMG) + ". Using only front-facing camera images")
         use_center = '-centerimg-'
     else:
+        print("cfg.USE_ONLY_CENTER_IMG = " + str(cfg.USE_ONLY_CENTER_IMG) + ". Using all camera images")
         use_center = '-allimg-'
 
     if cfg.USE_CROP:
-        print(
-            "cfg.USE_CROP = " + str(
-                cfg.USE_CROP) + ". Cropping the image")
+        print("cfg.USE_CROP = " + str(cfg.USE_CROP) + ". Cropping the image")
         use_crop = 'usecrop'
     else:
+        print("cfg.USE_CROP = " + str(cfg.USE_CROP) + ". Using the entire image")
         use_crop = 'nocrop'
 
     name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
     vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
-
     train_vae_model(cfg, vae, x_train, x_test)
+
+
+def main():
+    cfg = Config()
+    cfg.from_pyfile("myconfig.py")
+
+    x_train, x_test = load_data_for_vae(cfg)
+    run_training(cfg, x_test, x_train)
 
 
 if __name__ == '__main__':

@@ -1,9 +1,13 @@
+"""
+@author: astocco
+"""
+
 import random
 
 import numpy as np
 
-from variational_autoencoder import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS, normalize_and_reshape
-from utils import load_image
+from variational_autoencoder import normalize_and_reshape
+from utils import load_image, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, resize, crop, rgb2yuv
 from tensorflow.python.keras.utils.data_utils import Sequence
 
 
@@ -20,7 +24,7 @@ class Generator(Sequence):
         end_index = start_index + self.cfg.BATCH_SIZE
         batch_paths = self.path_to_pictures[start_index:end_index]
 
-        images = np.empty([len(batch_paths), IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_CHANNELS])
+        images = np.empty([len(batch_paths), RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS])
         for i, paths in enumerate(batch_paths):
 
             if self.cfg.USE_ONLY_CENTER_IMG:
@@ -29,7 +33,6 @@ class Generator(Sequence):
             else:
                 center, left, right = batch_paths[i]
 
-                # TODO: add the left and right image as well
                 choices = [0, 1, 2]  # 0=center, 1=left, 2=right
                 choice = random.choice(choices)
                 if choice == 0:
@@ -41,6 +44,16 @@ class Generator(Sequence):
                 else:
                     print('wrong image index in vae_batch_generator. Using default\'s 0 (center)')
                     image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
+
+            if self.cfg.USE_CROP:
+                image = crop(image)
+
+            image = resize(image)
+
+            # visualize whether the input image as expected
+            # import matplotlib.pyplot as plt
+            # plt.imshow(image)
+            # plt.show()
 
             image = normalize_and_reshape(image)
             images[i] = image

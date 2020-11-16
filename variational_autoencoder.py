@@ -1,12 +1,12 @@
-from keras import losses
 import tensorflow as tf
+from keras import losses
 from tensorflow.keras import Input, Model
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda
 
-from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS
+from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
 
-original_dim = IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_CHANNELS
+original_dim = RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS
 
 
 def sampling(args):
@@ -29,17 +29,17 @@ def get_input_shape():
 
 
 def get_image_dim():
-    return IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_CHANNELS
+    return RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS
 
 
 def normalize_and_reshape(x):
     x = x.astype('float32') / 255.
-    x = x.reshape(-1, IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_CHANNELS)
+    x = x.reshape(-1, RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
     return x
 
 
 def reshape(x):
-    x = x.reshape(-1, IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_CHANNELS)
+    x = x.reshape(-1, RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
     return x
 
 
@@ -74,7 +74,8 @@ class VariationalAutoencoder:
 
         # create decoder model
         latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
-        x = Dense(intermediate_dim, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(0.001))(latent_inputs)
+        x = Dense(intermediate_dim, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(0.001))(
+            latent_inputs)
         outputs = Dense(original_dim, activation='sigmoid')(x)
 
         # instantiate the decoder model
@@ -87,11 +88,11 @@ class VariationalAutoencoder:
 
         # custom loss function
         def vae_loss(x, x_decoded_mean):
-            """Defines the VAE loss functions as a combination of Xent loss and KL-divergence loss."""
+            """
+            Defines the VAE loss functions as a combination of MSE loss and KL-divergence loss.
+            """
             rec_loss = losses.mean_squared_error(x, x_decoded_mean)
 
-            # rec_loss = losses.binary_crossentropy(K.flatten(x), K.flatten(x_decoded_mean)) * IMAGE_WIDTH * IMAGE_HEIGHT
-            # rec_loss = losses.mean_squared_error(x, x_decoded_mean)
             kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
 
             # return rec_loss + kl_loss
@@ -107,6 +108,6 @@ class VariationalAutoencoder:
             vae.compile(optimizer='adam', loss="mean_squared_error")
         else:
             print("Invalid loss value. Using default VAE loss.")
-            vae.compile(optimizer='rmsprop', loss=vae_loss)
+            vae.compile(optimizer='adadelta', loss=vae_loss)
 
         return vae
