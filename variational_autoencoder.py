@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow.keras import Input, Model, losses
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda
-from tensorflow.keras.utils import get_custom_objects
 
 from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
 

@@ -12,10 +12,26 @@ from tqdm import tqdm
 import utils
 from config import Config
 from train_vae import setup_vae
-from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS
+from utils import IMAGE_HEIGHT, IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
 from variational_autoencoder import normalize_and_reshape
 
 np.random.seed(0)
+
+
+def plot_pictures_orig_rec(orig, dec, picture_name, loss):
+    f = plt.figure(figsize=(20, 8))
+
+    f.add_subplot(1, 2, 1)
+    plt.imshow(orig.reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
+    plt.title("Original")
+
+    f.add_subplot(1, 2, 2)
+    plt.imshow(dec.reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
+    plt.title("Reconstructed loss %.4f" % loss)
+    plt.show(block=True)
+
+    plt.savefig(picture_name, bbox_inches='tight')
+    plt.close()
 
 
 def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_cache):
@@ -31,13 +47,21 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
         losses = np.load(cache_path)
         losses = losses.tolist()
         print("Found losses data for " + cached_file_name)
+        return losses
     except FileNotFoundError:
         print("Losses data for " + cached_file_name + " not found. Computing...")
+        i = 0
         for x in tqdm(dataset):
+            i = i + 1
             x = utils.resize(x)
             x = normalize_and_reshape(x)
-            # x = np.expand_dims(x, axis=0)
             loss = anomaly_detector.test_on_batch(x, x)
+
+            x_rec = anomaly_detector.predict(x)
+
+            if i % 100 == 0:
+                plot_pictures_orig_rec(x, x_rec, "picture.png", loss)
+
             losses.append(loss)
         np_losses = np.array(losses)
         np.save(cache_path, np_losses)
@@ -113,6 +137,63 @@ def load_all_images(cfg):
     return images
 
 
+def plot_picture_orig_dec(orig, dec, picture_name, losses, num=10):
+    n = num
+    plt.figure(figsize=(40, 8))
+    for i in range(n):
+        # display original
+        ax = plt.subplot(2, n, i + 1)
+        plt.imshow(orig[i].reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        plt.title("Original Photo")
+
+        # display reconstruction
+        ax = plt.subplot(2, n, i + 1 + n)
+        plt.imshow(dec[i].reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        plt.title("Reconstructed loss %.4f" % losses[i])
+
+    plt.savefig(picture_name, bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+
+def draw_best_worst_results(dataset, autoencoder, losses, picture_name, numb_of_picture=10):
+    model = tensorflow.keras.models.load_model('sao/' + autoencoder.__str__())
+
+    extremes, extremes_loss = get_best_and_worst_by_loss(dataset, losses, numb_of_picture // 2)
+    # extremes = model.reshape(extremes)
+
+    # extremes = utils.resize(extremes)
+    extremes = normalize_and_reshape(extremes)
+
+    anomaly_decoded_img = model.predict(extremes)
+    plot_picture_orig_dec(extremes, anomaly_decoded_img, picture_name, extremes_loss, numb_of_picture)
+
+
+def get_best_and_worst_by_loss(dataset, losses, n=5):
+    loss_picture_list = []
+    for idx, loss in enumerate(losses):
+        picture = dataset[idx]
+        loss_picture_list.append([loss, picture])
+
+    loss_picture_list = sorted(loss_picture_list, key=lambda x: x[0])
+
+    result = []
+    losses = []
+    for idx in range(0, n):
+        result.append(loss_picture_list[idx][1])
+        losses.append(loss_picture_list[idx][0])
+
+    for idx in range(len(loss_picture_list) - n, len(loss_picture_list)):
+        result.append(loss_picture_list[idx][1])
+        losses.append(loss_picture_list[idx][0])
+
+    return np.array(result), losses
+
+
 def compute_losses_vae(cfg, name, images):
     """
     Evaluate the VAE model, compute reconstruction losses
@@ -152,10 +233,13 @@ def compute_losses_vae(cfg, name, images):
     plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
     plt.show()
 
+    return losses
+
 
 def load_and_eval_vae(cfg, data):
     vae, name = setup_vae(cfg)
-    compute_losses_vae(cfg, name, data)
+    losses = compute_losses_vae(cfg, name, data)
+    draw_best_worst_results(data, name, losses, "picture_name", numb_of_picture=10)
 
 
 def main():
