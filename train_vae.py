@@ -3,6 +3,8 @@ import os
 import time
 from pathlib import Path
 
+import tensorflow
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -125,7 +127,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     plt.show()
 
     # save the last model (might not be the best)
-    model.save(my_file)
+    tensorflow.keras.models.save_model(model, my_file.__str__())
 
 
 def setup_vae(cfg):

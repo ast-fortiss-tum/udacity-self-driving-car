@@ -115,7 +115,7 @@ def load_all_images(cfg):
     return images
 
 
-def compute_losses_vae(cfg, vae, name, images):
+def compute_losses_vae(cfg, name, images):
     """
     Evaluate the VAE model, compute reconstruction losses
     """
@@ -126,7 +126,7 @@ def compute_losses_vae(cfg, vae, name, images):
         return
     else:
         print("Found model %s. Loading..." % str(name))
-        model = tensorflow.keras.models.load_model(my_file)
+        model = tensorflow.keras.models.load_model(my_file.__str__())
 
     print("Start computing reconstruction losses.")
     start = time.time()
@@ -157,7 +157,7 @@ def compute_losses_vae(cfg, vae, name, images):
 
 def load_and_eval_vae(cfg, data):
     vae, name = setup_vae(cfg)
-    compute_losses_vae(cfg, vae, name, data)
+    compute_losses_vae(cfg, name, data)
 
 
 def main():
