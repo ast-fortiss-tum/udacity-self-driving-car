@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     only_center_images = [True, False]
     use_crop = [True, False]
-    loss_func = ["VAE", "MSE"]
+    loss_func = ["MSE"]  # ["VAE", "MSE"]
 
     x_train, x_test = load_data_for_vae(cfg)
 
