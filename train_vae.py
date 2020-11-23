@@ -101,7 +101,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
 
     history = model.fit(train_generator,
                         validation_data=val_generator,
-                        shuffle=True,
+                        shuffle=False,
                         epochs=cfg.NUM_EPOCHS_SAO_MODEL,
                         # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
                         verbose=1)
@@ -140,7 +140,7 @@ def setup_vae(cfg):
         use_crop = 'nocrop'
 
     name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
-    vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL, lr=cfg.SAO_LEARNING_RATE)
+    vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
 
     return vae, name
 

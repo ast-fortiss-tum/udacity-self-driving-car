@@ -22,5 +22,5 @@ LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
 NUM_EPOCHS_SAO_MODEL = 50  # training epochs for the autoencoder-based self-assessment oracle
 USE_ONLY_CENTER_IMG = True  # train the autoencoder-based self-assessment oracle only using front-facing camera images
 USE_CROP = False  # crop the images the same way as the car
-LOSS_SAO_MODEL = "VAE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
-SAO_LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
+LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
+#SAO_LEARNING_RATE = 1.0e-3  # amount that the weights are updated during training

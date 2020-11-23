@@ -104,17 +104,18 @@ class VariationalAutoencoder:
         vae = Model(inputs, outputs, name='vae_mlp')
 
         loss = Lambda(vae_loss, name='vae_loss')([inputs, outputs, z_mean, z_log_sigma])
-        vae.add_loss(loss)
 
         # compile the model
         if "VAE" in self.loss:
             print("Using VAE loss")
-            vae.compile(optimizer='adadelta', lr=self.learning_rate)
+            vae.compile(optimizer='adadelta')
+            vae.add_loss(loss)
         elif "MSE" in self.loss:
             print("Using MSE loss")
-            vae.compile(optimizer='adam', loss="mean_squared_error", lr=self.learning_rate)
+            vae.compile(optimizer='adam', loss="mean_squared_error")
         else:
             print("Invalid loss value. Using default VAE loss.")
-            vae.compile(optimizer='adadelta', lr=self.learning_rate)
+            vae.compile(optimizer='adadelta')
+            vae.add_loss(loss)
 
         return vae
