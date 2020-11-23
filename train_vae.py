@@ -17,6 +17,7 @@ from variational_autoencoder import VariationalAutoencoder
 np.random.seed(0)
 
 from tensorflow.python.framework import tensor_util
+from tensorflow.python import keras
 
 
 def is_tensor(x):
@@ -90,6 +91,8 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
         print("Model %s already exists. Quit training." % str(name))
         return
 
+    es = keras.callbacks.EarlyStopping(monitor='loss', patience=5, mode="auto", restore_best_weights=True)
+
     start = time.time()
 
     model = vae.create_autoencoder()
@@ -103,6 +106,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
                         validation_data=val_generator,
                         shuffle=True,
                         epochs=cfg.NUM_EPOCHS_SAO_MODEL,
+                        callbacks=[es],
                         # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
                         verbose=1)
 
