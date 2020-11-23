@@ -16,6 +16,12 @@ from variational_autoencoder import VariationalAutoencoder
 
 np.random.seed(0)
 
+from tensorflow.python.framework import tensor_util
+
+
+def is_tensor(x):
+    return tensor_util.is_tensor(x)
+
 
 def load_data_for_vae(cfg):
     """
@@ -36,7 +42,10 @@ def load_data_for_vae(cfg):
     for track in tracks:
         for drive_style in drive:
             try:
-                path = os.path.join(cfg.TRAINING_DATA_DIR, cfg.SIMULATION_DATA_DIR, track, drive_style,
+                path = os.path.join(cfg.TRAINING_DATA_DIR,
+                                    cfg.SIMULATION_DATA_DIR,
+                                    track,
+                                    drive_style,
                                     'driving_log.csv')
                 data_df = pd.read_csv(path)
                 if x is None:
@@ -76,8 +85,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     """
     Train the VAE model
     """
-
-    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name) + '.h5')
+    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))  # do not use .h5 extension
     if my_file.exists():
         print("Model %s already exists. Quit training." % str(name))
         return
@@ -91,12 +99,12 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     train_generator = Generator(model, x_train, True, cfg)
     val_generator = Generator(model, x_test, True, cfg)
 
-    history = model.fit_generator(generator=train_generator,
-                                  validation_data=val_generator,
-                                  shuffle=True,
-                                  epochs=cfg.NUM_EPOCHS_SAO_MODEL,
-                                  # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
-                                  verbose=1)
+    history = model.fit(train_generator,
+                        validation_data=val_generator,
+                        shuffle=True,
+                        epochs=cfg.NUM_EPOCHS_SAO_MODEL,
+                        # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
+                        verbose=1)
 
     duration_train = time.time() - start
     print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
@@ -113,7 +121,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     plt.show()
 
     # save the last model (might not be the best)
-    model.save("sao/" + str(vae.model_name) + ".h5")
+    model.save(my_file)
 
 
 def setup_vae(cfg):
@@ -132,7 +140,7 @@ def setup_vae(cfg):
         use_crop = 'nocrop'
 
     name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
-    vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
+    vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL, lr=cfg.SAO_LEARNING_RATE)
 
     return vae, name
 

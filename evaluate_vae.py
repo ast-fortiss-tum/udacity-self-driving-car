@@ -64,7 +64,10 @@ def load_all_images(cfg):
     for track in tracks:
         for drive_style in drive:
             try:
-                path = os.path.join(cfg.TRAINING_DATA_DIR, cfg.SIMULATION_DATA_DIR, track, drive_style,
+                path = os.path.join(cfg.TRAINING_DATA_DIR,
+                                    cfg.SIMULATION_DATA_DIR,
+                                    track,
+                                    drive_style,
                                     'driving_log.csv')
                 data_df = pd.read_csv(path)
 
@@ -75,7 +78,7 @@ def load_all_images(cfg):
 
                 if track == "track1":
                     # print("Loading only the first 1102 images from %s (one lap)" % track)
-                    x = x[:1102]
+                    x = x[:cfg.TRACK1_IMG_PER_LAP]
                 else:
                     print("Not yet implemented! Quitting...")
                     exit()
@@ -117,7 +120,7 @@ def compute_losses_vae(cfg, vae, name, images):
     Evaluate the VAE model, compute reconstruction losses
     """
 
-    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name) + '.h5')
+    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
     if not my_file.exists():
         print("Model %s does not exists. Do training first." % str(name))
         return
@@ -145,6 +148,10 @@ def compute_losses_vae(cfg, vae, name, images):
 
     plt.savefig('plots/reconstruction-plot-' + name + '.png')
 
+    plt.show()
+
+    plt.clf()
+    plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
     plt.show()
 
 

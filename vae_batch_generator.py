@@ -8,7 +8,7 @@ import numpy as np
 
 from variational_autoencoder import normalize_and_reshape
 from utils import load_image, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, resize, crop, rgb2yuv
-from tensorflow.python.keras.utils.data_utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 
 class Generator(Sequence):
