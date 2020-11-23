@@ -143,7 +143,7 @@ def setup_vae(cfg):
         print("cfg.USE_CROP = " + str(cfg.USE_CROP) + ". Using the entire image")
         use_crop = 'nocrop'
 
-    name = "VAE-" + cfg.TRACK[0] + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
+    name = "VAE-" + cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
     vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
 
     return vae, name
