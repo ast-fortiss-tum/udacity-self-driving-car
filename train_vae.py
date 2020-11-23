@@ -30,10 +30,9 @@ def load_data_for_vae(cfg):
     """
     Load training data and split it into training and validation set
     """
-    tracks = cfg.TRACK
     drive = utils.get_driving_styles(cfg)
 
-    print("Loading training set " + str(tracks) + str(drive))
+    print("Loading training set " + str(cfg.TRACK) + str(drive))
 
     start = time.time()
 
@@ -42,28 +41,27 @@ def load_data_for_vae(cfg):
     x_train = None
     x_test = None
 
-    for track in tracks:
-        for drive_style in drive:
-            try:
-                path = os.path.join(cfg.TRAINING_DATA_DIR,
-                                    cfg.SIMULATION_DATA_DIR,
-                                    track,
-                                    drive_style,
-                                    'driving_log.csv')
-                data_df = pd.read_csv(path)
-                if x is None:
-                    if cfg.USE_ONLY_CENTER_IMG:
-                        x = data_df[['center']].values
-                    else:
-                        x = data_df[['center', 'left', 'right']].values
+    for drive_style in drive:
+        try:
+            path = os.path.join(cfg.TRAINING_DATA_DIR,
+                                cfg.SIMULATION_DATA_DIR,
+                                cfg.TRACK,
+                                drive_style,
+                                'driving_log.csv')
+            data_df = pd.read_csv(path)
+            if x is None:
+                if cfg.USE_ONLY_CENTER_IMG:
+                    x = data_df[['center']].values
                 else:
-                    if cfg.USE_ONLY_CENTER_IMG:
-                        x = np.concatenate((x, data_df[['center']].values), axis=0)
-                    else:
-                        x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0)
-            except FileNotFoundError:
-                print("Unable to read file %s" % path)
-                continue
+                    x = data_df[['center', 'left', 'right']].values
+            else:
+                if cfg.USE_ONLY_CENTER_IMG:
+                    x = np.concatenate((x, data_df[['center']].values), axis=0)
+                else:
+                    x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0)
+        except FileNotFoundError:
+            print("Unable to read file %s" % path)
+            continue
 
     if x is None:
         print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")

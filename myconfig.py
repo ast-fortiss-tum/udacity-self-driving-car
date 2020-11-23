@@ -5,7 +5,7 @@ SAO_MODELS_DIR = "sao"  # root folder for all autoencoder-based self-assessment 
 TEST_SIZE = 0.05  # split of training data used for the validation set (keep it low)
 
 # simulations settings
-TRACK = ["track1"]  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
+TRACK = "track1"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
 TRACK1_DRIVING_STYLES = ["normal", "recovery", "reverse"]
 TRACK2_DRIVING_STYLES = ["normal", "recovery", "recovery2", "recovery3", "reverse", "sport_normal", "sport_reverse"]
 TRACK3_DRIVING_STYLES = ["normal", "recovery", "recovery2", "reverse", "sport_normal"]
@@ -20,7 +20,7 @@ LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
 
 # autoencoder-based self-assessment oracle settings
 NUM_EPOCHS_SAO_MODEL = 1  # training epochs for the autoencoder-based self-assessment oracle
-USE_ONLY_CENTER_IMG = True  # train the autoencoder-based self-assessment oracle only using front-facing camera images
+USE_ONLY_CENTER_IMG = False  # train the autoencoder-based self-assessment oracle only using front-facing camera images
 USE_CROP = False  # crop the images the same way as the car
 LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
 #SAO_LEARNING_RATE = 1.0e-3  # amount that the weights are updated during training

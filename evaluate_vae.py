@@ -51,41 +51,39 @@ def load_all_images(cfg):
     Load all driving images
     TODO: inefficient
     """
-    tracks = cfg.TRACK
     drive = utils.get_driving_styles(cfg)
 
-    print("Loading data set " + str(tracks) + str(drive))
+    print("Loading data set " + str(cfg.TRACK) + str(drive))
 
     start = time.time()
 
     x = None
     path = None
 
-    for track in tracks:
-        for drive_style in drive:
-            try:
-                path = os.path.join(cfg.TRAINING_DATA_DIR,
-                                    cfg.SIMULATION_DATA_DIR,
-                                    track,
-                                    drive_style,
-                                    'driving_log.csv')
-                data_df = pd.read_csv(path)
+    for drive_style in drive:
+        try:
+            path = os.path.join(cfg.TRAINING_DATA_DIR,
+                                cfg.SIMULATION_DATA_DIR,
+                                cfg.TRACK,
+                                drive_style,
+                                'driving_log.csv')
+            data_df = pd.read_csv(path)
 
-                if x is None:
-                    x = data_df[['center']].values
-                else:
-                    x = np.concatenate((x, data_df[['center']].values), axis=0)
+            if x is None:
+                x = data_df[['center']].values
+            else:
+                x = np.concatenate((x, data_df[['center']].values), axis=0)
 
-                if track == "track1":
-                    # print("Loading only the first 1102 images from %s (one lap)" % track)
-                    x = x[:cfg.TRACK1_IMG_PER_LAP]
-                else:
-                    print("Not yet implemented! Quitting...")
-                    exit()
+            if cfg.TRACK == "track1":
+                # print("Loading only the first 1102 images from %s (one lap)" % track)
+                x = x[:cfg.TRACK1_IMG_PER_LAP]
+            else:
+                print("Not yet implemented! Quitting...")
+                exit()
 
-            except FileNotFoundError:
-                print("Unable to read file %s" % path)
-                continue
+        except FileNotFoundError:
+            print("Unable to read file %s" % path)
+            continue
 
     if x is None:
         print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")

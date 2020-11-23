@@ -228,14 +228,12 @@ def s2b(s):
 
 
 def get_driving_styles(cfg):
-    if cfg.TRACK == ["track1"]:
+    if cfg.TRACK == "track1":
         return cfg.TRACK1_DRIVING_STYLES
-    elif cfg.TRACK == ["track2"]:
+    elif cfg.TRACK == "track2":
         return cfg.TRACK2_DRIVING_STYLES
-    elif cfg.TRACK == ["track3"]:
+    elif cfg.TRACK == "track3":
         return cfg.TRACK3_DRIVING_STYLES
-    elif cfg.TRACK == ["track1", "track2", "track3"]:
-        return cfg.TRACK1_DRIVING_STYLES + cfg.TRACK2_DRIVING_STYLES + cfg.TRACK3_DRIVING_STYLES
     else:
         print("Invalid TRACK option within the config file")
         exit(1)
