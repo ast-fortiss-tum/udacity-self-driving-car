@@ -3,7 +3,6 @@ import os
 import time
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow
@@ -12,6 +11,7 @@ from sklearn.utils import shuffle
 
 import utils
 from config import Config
+from utils import plot_history
 from vae_batch_generator import Generator
 from variational_autoencoder import VariationalAutoencoder
 
@@ -89,11 +89,9 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     """
     Train the VAE model
     """
-    if cfg.LOSS_SAO_MODEL == "VAE":
-        # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
-        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
-    else:
-        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name) + ".h5")
+
+    # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
 
     if my_file.exists():
         print("Model %s already exists. Quit training." % str(name))
@@ -121,24 +119,12 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     duration_train = time.time() - start
     print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
-    # summarize history for loss
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
-    plt.xlabel('epoch')
-    plt.title('training VAE (' + str(cfg.NUM_EPOCHS_SAO_MODEL) + ' epochs)')
-    plt.legend(['train', 'val'], loc='upper left')
-    plt.savefig('history-training-' + str(vae.model_name) + '.png')
-    plt.show()
+    plot_history(history.history, cfg, name, vae)
 
     # save the last model (might not be the best)
     # TODO: save the encoder and decoder as well
-    if cfg.LOSS_SAO_MODEL == "VAE":
-        # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
-        tensorflow.keras.models.save_model(model, my_file.__str__())
-    else:
-        tensorflow.keras.models.save_model(model, my_file)
+    # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+    tensorflow.keras.models.save_model(model, my_file.__str__())
 
     # save history file
     np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)

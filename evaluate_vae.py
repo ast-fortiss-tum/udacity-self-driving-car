@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import tensorflow
 from tqdm import tqdm
+from utils import plot_history
 
 import utils
 from config import Config
@@ -57,7 +58,10 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
             x = normalize_and_reshape(x)
 
             # TODO: the version with the VAE loss requires special treatment
-            loss = anomaly_detector.test_on_batch(x, x)
+            if "VAEloss" in cached_file_name:
+                loss = anomaly_detector.test_on_batch(x)
+            else:
+                loss = anomaly_detector.test_on_batch(x, x)
 
             # x_rec = anomaly_detector.predict(x)
 
@@ -205,22 +209,16 @@ def compute_losses_vae(cfg, name, images):
     Evaluate the VAE model, compute reconstruction losses
     """
 
-    if cfg.LOSS_SAO_MODEL == "VAE":
-        # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
-        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
-    else:
-        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name) + ".h5")
+    # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
 
     if not my_file.exists():
         print("Model %s does not exists. Do training first." % str(name))
         return
     else:
         print("Found model %s. Loading..." % str(name))
-        if cfg.LOSS_SAO_MODEL == "VAE":
-            # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
-            model = tensorflow.keras.models.load_model(my_file.__str__())
-        else:
-            model = tensorflow.keras.models.load_model(my_file)
+        # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+        model = tensorflow.keras.models.load_model(my_file.__str__())
 
     print("Start computing reconstruction losses.")
     start = time.time()
@@ -256,18 +254,7 @@ def load_and_eval_vae(cfg, data):
 
     history = np.load(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", allow_pickle=True).item()
 
-    # summarize history for loss
-    plt.plot(history['loss'])
-    plt.plot(history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
-    plt.xlabel('epoch')
-    plt.title('training VAE (' + str(cfg.NUM_EPOCHS_SAO_MODEL) + ' epochs)')
-    plt.legend(['train', 'val'], loc='upper left')
-    plt.savefig('history-training-' + str(vae.model_name) + '.png')
-    plt.show()
-
-    exit()
+    plot_history(history, cfg, name, vae)
 
     losses = compute_losses_vae(cfg, name, data)
     # draw_best_worst_results(data, name, losses, "picture_name", numb_of_picture=10)

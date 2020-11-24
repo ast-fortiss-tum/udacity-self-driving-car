@@ -9,6 +9,7 @@ original_dim = RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS
 
 
 # custom loss function
+@tf.function
 def vae_loss(args):
     """
     Defines the VAE loss functions as a combination of MSE loss and KL-divergence loss.
@@ -23,6 +24,7 @@ def vae_loss(args):
     return K.mean(rec_loss + kl_loss)
 
 
+@tf.function
 def sampling(args):
     """Re-parameterization trick by sampling fr an isotropic unit Gaussian.
     # Arguments
@@ -63,8 +65,7 @@ class VariationalAutoencoder:
                  model_name,
                  intermediate_dim=512,
                  latent_dim=2,
-                 loss="VAE",  # [ "VAE", "MSE"]
-                 learning_rate=1.0e-4):
+                 loss="VAE"):  # [ "VAE", "MSE"]
         self.model_name = model_name
         self.intermediate_dim = intermediate_dim
         self.latent_dim = latent_dim

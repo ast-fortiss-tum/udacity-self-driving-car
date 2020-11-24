@@ -4,6 +4,7 @@ import shutil
 
 import cv2
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tensorflow.keras import backend as K
@@ -237,3 +238,15 @@ def get_driving_styles(cfg):
     else:
         print("Invalid TRACK option within the config file")
         exit(1)
+
+
+def plot_history(history, cfg, name, vae):
+    # summarize history for loss
+    plt.plot(history['loss'])
+    plt.plot(history['val_loss'])
+    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
+    plt.xlabel('epoch')
+    plt.title('training ' + name)
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
+    plt.show()
