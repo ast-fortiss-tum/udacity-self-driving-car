@@ -3,11 +3,10 @@ import os
 import time
 from pathlib import Path
 
-import tensorflow
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tensorflow
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
@@ -67,8 +66,9 @@ def load_data_for_vae(cfg):
         print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
         exit()
 
-    print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
-    x = x[:cfg.TRACK1_IMG_PER_LAP]
+    if cfg.TRACK == "track1":
+        print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
+        x = x[:cfg.TRACK1_IMG_PER_LAP]
 
     try:
         x_train, x_test = train_test_split(x, test_size=cfg.TEST_SIZE, random_state=0)
@@ -89,7 +89,12 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     """
     Train the VAE model
     """
-    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))  # do not use .h5 extension
+    if cfg.LOSS_SAO_MODEL == "VAE":
+        # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
+    else:
+        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name) + ".h5")
+
     if my_file.exists():
         print("Model %s already exists. Quit training." % str(name))
         return
@@ -128,7 +133,15 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     plt.show()
 
     # save the last model (might not be the best)
-    tensorflow.keras.models.save_model(model, my_file.__str__())  # TODO: save the encoder and decoder as well
+    # TODO: save the encoder and decoder as well
+    if cfg.LOSS_SAO_MODEL == "VAE":
+        # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+        tensorflow.keras.models.save_model(model, my_file.__str__())
+    else:
+        tensorflow.keras.models.save_model(model, my_file)
+
+    # save history file
+    np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)) + ".npy", history.history)
 
 
 def setup_vae(cfg):

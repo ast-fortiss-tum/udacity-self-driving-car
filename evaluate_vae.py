@@ -205,13 +205,22 @@ def compute_losses_vae(cfg, name, images):
     Evaluate the VAE model, compute reconstruction losses
     """
 
-    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
+    if cfg.LOSS_SAO_MODEL == "VAE":
+        # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
+    else:
+        my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name) + ".h5")
+
     if not my_file.exists():
         print("Model %s does not exists. Do training first." % str(name))
         return
     else:
         print("Found model %s. Loading..." % str(name))
-        model = tensorflow.keras.models.load_model(my_file.__str__())
+        if cfg.LOSS_SAO_MODEL == "VAE":
+            # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+            model = tensorflow.keras.models.load_model(my_file.__str__())
+        else:
+            model = tensorflow.keras.models.load_model(my_file)
 
     print("Start computing reconstruction losses.")
     start = time.time()
@@ -245,7 +254,7 @@ def compute_losses_vae(cfg, name, images):
 def load_and_eval_vae(cfg, data):
     vae, name = setup_vae(cfg)
     losses = compute_losses_vae(cfg, name, data)
-    draw_best_worst_results(data, name, losses, "picture_name", numb_of_picture=10)
+    # draw_best_worst_results(data, name, losses, "picture_name", numb_of_picture=10)
 
 
 def main():
