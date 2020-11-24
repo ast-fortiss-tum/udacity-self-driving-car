@@ -253,6 +253,22 @@ def compute_losses_vae(cfg, name, images):
 
 def load_and_eval_vae(cfg, data):
     vae, name = setup_vae(cfg)
+
+    history = np.load(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", allow_pickle=True).item()
+
+    # summarize history for loss
+    plt.plot(history['loss'])
+    plt.plot(history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
+    plt.xlabel('epoch')
+    plt.title('training VAE (' + str(cfg.NUM_EPOCHS_SAO_MODEL) + ' epochs)')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('history-training-' + str(vae.model_name) + '.png')
+    plt.show()
+
+    exit()
+
     losses = compute_losses_vae(cfg, name, data)
     # draw_best_worst_results(data, name, losses, "picture_name", numb_of_picture=10)
 
