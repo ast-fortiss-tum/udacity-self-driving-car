@@ -67,6 +67,9 @@ def load_data_for_vae(cfg):
         print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
         exit()
 
+    print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
+    x = x[:cfg.TRACK1_IMG_PER_LAP]
+
     try:
         x_train, x_test = train_test_split(x, test_size=cfg.TEST_SIZE, random_state=0)
     except TypeError:
