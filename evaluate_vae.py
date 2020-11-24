@@ -55,9 +55,15 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
             i = i + 1
             x = utils.resize(x)
             x = normalize_and_reshape(x)
-            loss = anomaly_detector.test_on_batch(x, x)
+
+            # TODO: the version with the VAE loss requires special treatment
+            loss = anomaly_detector.test_on_batch(x)
 
             x_rec = anomaly_detector.predict(x)
+
+            import matplotlib.pyplot as plt
+            plt.imshow(anomaly_detector.predict_on_batch(x).reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
+            plt.show()
 
             if i % 100 == 0:
                 plot_pictures_orig_rec(x, x_rec, "picture.png", loss)

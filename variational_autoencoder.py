@@ -69,7 +69,6 @@ class VariationalAutoencoder:
         self.intermediate_dim = intermediate_dim
         self.latent_dim = latent_dim
         self.loss = loss
-        self.learning_rate = learning_rate
 
     def create_autoencoder(self):
         intermediate_dim = self.intermediate_dim
@@ -90,8 +89,9 @@ class VariationalAutoencoder:
 
         # create decoder model
         latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
-        x = Dense(intermediate_dim, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(0.001))(
-            latent_inputs)
+        x = Dense(intermediate_dim,
+                  activation='relu',
+                  kernel_regularizer=tf.keras.regularizers.l1(0.001))(latent_inputs)
         outputs = Dense(original_dim, activation='sigmoid')(x)
 
         # instantiate the decoder model
@@ -117,4 +117,4 @@ class VariationalAutoencoder:
             vae.compile(optimizer='adadelta')
             vae.add_loss(loss)
 
-        return vae
+        return vae, encoder, decoder

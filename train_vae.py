@@ -95,7 +95,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
 
     start = time.time()
 
-    model = vae.create_autoencoder()
+    model, encoder, decoder = vae.create_autoencoder()
 
     x_train = shuffle(x_train, random_state=0)
     x_test = shuffle(x_test, random_state=0)
@@ -125,7 +125,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     plt.show()
 
     # save the last model (might not be the best)
-    tensorflow.keras.models.save_model(model, my_file.__str__())
+    tensorflow.keras.models.save_model(model, my_file.__str__())  # TODO: save the encoder and decoder as well
 
 
 def setup_vae(cfg):
