@@ -141,7 +141,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
         tensorflow.keras.models.save_model(model, my_file)
 
     # save history file
-    np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)) + ".npy", history.history)
+    np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
 
 
 def setup_vae(cfg):
