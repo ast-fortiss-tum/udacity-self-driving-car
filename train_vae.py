@@ -8,6 +8,7 @@ import pandas as pd
 import tensorflow
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+import shutil
 
 import utils
 from config import Config
@@ -85,13 +86,18 @@ def load_data_for_vae(cfg):
     return x_train, x_test
 
 
-def train_vae_model(cfg, vae, name, x_train, x_test):
+def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
     """
     Train the VAE model
     """
 
     # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
     my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
+
+    if delete_model:
+        print("Deleting model %s" % str(my_file))
+        shutil.rmtree(my_file, ignore_errors=True)
+        print("Model %s deleted" % str(my_file))
 
     if my_file.exists():
         print("Model %s already exists. Quit training." % str(name))
@@ -126,6 +132,14 @@ def train_vae_model(cfg, vae, name, x_train, x_test):
     # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
     tensorflow.keras.models.save_model(model, my_file.__str__())
 
+    encoder_name = name.replace("VAE-", "encoder-")
+    encoder_file = Path(os.path.join(cfg.SAO_MODELS_DIR, encoder_name))
+    tensorflow.keras.models.save_model(encoder, encoder_file.__str__())
+
+    decoder_name = name.replace("VAE-", "decoder-")
+    decoder_file = Path(os.path.join(cfg.SAO_MODELS_DIR, decoder_name))
+    tensorflow.keras.models.save_model(decoder, decoder_file.__str__())
+
     # save history file
     np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
 
@@ -153,7 +167,7 @@ def setup_vae(cfg):
 
 def run_training(cfg, x_test, x_train):
     vae, name = setup_vae(cfg)
-    train_vae_model(cfg, vae, name, x_train, x_test)
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True)
 
 
 def main():
