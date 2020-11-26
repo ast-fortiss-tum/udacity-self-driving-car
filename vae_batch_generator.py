@@ -13,6 +13,7 @@ from tensorflow.keras.utils import Sequence
 
 class Generator(Sequence):
 
+    # TODO: model is unnecessary?
     def __init__(self, model, path_to_pictures, is_training, cfg):
         self.model = model
         self.path_to_pictures = path_to_pictures
