@@ -30,7 +30,9 @@ def plot_pictures_orig_rec(orig, dec, picture_name, loss):
     plt.title("Reconstructed loss %.4f" % loss)
     plt.show(block=True)
 
-    plt.savefig(picture_name, bbox_inches='tight')
+    if picture_name is not None:
+        plt.savefig(picture_name, bbox_inches='tight')
+
     plt.close()
 
 

@@ -113,14 +113,14 @@ mnist_digits = np.expand_dims(mnist_digits, -1).astype("float32") / 255
 if not os.path.exists('chollet-vae-encoder'):
 
     encoder = Encoder().call(mnist_digits)
-    encoder.save('chollet-vae-encoder')
-
     decoder = Decoder().call(encoder.predict(mnist_digits))
-    decoder.save('chollet-vae-decoder')
 
     vae = VAE(encoder, decoder)
     vae.compile(optimizer=keras.optimizers.Adam())
-    vae.fit(mnist_digits, epochs=30, batch_size=64)
+    vae.fit(mnist_digits, epochs=2, batch_size=64)
+
+    encoder.save('chollet-vae-encoder')
+    decoder.save('chollet-vae-decoder')
 
 else:
 
@@ -143,7 +143,7 @@ decoded = decoder.predict(z)
 plt.imshow(decoded[0].reshape(28, 28))
 plt.show()
 
-#exit()
+# exit()
 
 """
 ## Display a grid of sampled digits
