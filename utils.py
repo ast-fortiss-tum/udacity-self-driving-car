@@ -232,14 +232,14 @@ def create_csv_results_file_header(file_name, fieldnames):
 def create_output_dir(args, fieldnames):
     path = os.path.join(args.data_dir, args.sim_name, "IMG")
     csv_path = os.path.join(args.data_dir, args.sim_name)
-    print("Creating image folder at {}".format(path))
-    if not os.path.exists(path):
-        os.makedirs(path)
-        create_csv_results_file_header(csv_path, fieldnames)
-    else:
-        shutil.rmtree(csv_path)
-        os.makedirs(path)
 
+    if os.path.exists(path):
+        shutil.rmtree(csv_path)
+        print("Deleted image folder at {}".format(path))
+
+    print("Creating image folder at {}".format(path))
+    os.makedirs(path)
+    create_csv_results_file_header(csv_path, fieldnames)
 
 def load_autoencoder(model):
     autoencoder = model.create_autoencoder()

@@ -166,35 +166,6 @@ def load_autoencoder(model):
     return autoencoder
 
 
-def writeCsvLine(filename, row):
-    if filename is not None:
-        filename += "/driving_log.csv"
-        with open(filename, mode='a') as result_file:
-            writer = csv.writer(result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
-                                lineterminator='\n')
-            writer.writerow(row)
-            result_file.flush()
-            result_file.close()
-    else:
-        create_csv_results_file_header(filename)
-
-
-def create_csv_results_file_header(file_name):
-    if file_name is not None:
-        file_name += "/driving_log.csv"
-        with open(file_name, mode='w', newline='') as result_file:
-            csv.writer(result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
-            fieldnames = ["FrameId", "Self Driving Model", "Anomaly Detector", "Threshold", "Track Name", "Lap Number",
-                          "Check Point", "Loss", "Steering Angle", "Throttle", "Brake", "Speed", "Crashed", "center",
-                          "Tot OBEs", "Tot Crashes"]
-            writer = csv.DictWriter(result_file, fieldnames=fieldnames)
-            writer.writeheader()
-            result_file.flush()
-            result_file.close()
-
-    return None
-
-
 if __name__ == '__main__':
 
     with open('C:\\Users\\41763\\repos\\master-thesis-marco-calzana\\self-driving-car\\model_name.txt',
@@ -208,14 +179,14 @@ if __name__ == '__main__':
     parser.add_argument('-d', help='data save directory', dest='data_dir', type=str,
                         default="simulations")
     parser.add_argument('-m', help='path to the model', dest='model', type=str,
-                        default="models/epoch-dataset5-304.h5")
-                        # default='C:\\Users\\41763\\track1_epochmodels\\'+ fileName)
+                        #default="models/epoch-dataset5-304.h5")
+                        default='C:\\Users\\41763\\track1_epochmodels\\'+ fileName)
 
     parser.add_argument('-ad', help='path to the anomaly detector model', dest='anomaly_detector', type=str,
                         default="sao/VAE-ICSE20.h5")  # DO NOT CHANGE THIS
     parser.add_argument('-threshold', help='threshold for the outlier detector', dest='threshold', type=float,
                         default=0.035)
-    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default='trial')
+    parser.add_argument('-n', help='simulation name', dest='sim_name', type=str, default=fileName)
     parser.add_argument('-s', help='speed', dest='speed', type=int, default=30)
     parser.add_argument('-max_laps', help='number of laps in a simulation', dest='max_laps', type=int, default=1)
 
@@ -246,16 +217,7 @@ if __name__ == '__main__':
     anomaly_detection.compile(optimizer='adam', loss='mean_squared_error')
 
     if args.data_dir != '':
-        path = os.path.join(args.data_dir, args.sim_name, "IMG")
-        csv_path = os.path.join(args.data_dir, args.sim_name)
-
-        if os.path.exists(path):
-            print("Deleting existing image folder at {}".format(path))
-            shutil.rmtree(csv_path)
-
-        print("Creating image folder at {}".format(path))
-        os.makedirs(path)
-        create_csv_results_file_header(csv_path)
+        utils.create_output_dir(args, utils.csv_fieldnames_improved_simulator)
         print("RECORDING THIS RUN ...")
     else:
         print("NOT RECORDING THIS RUN ...")
