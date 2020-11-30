@@ -1,6 +1,8 @@
 import csv
+import datetime
 import os
 import shutil
+import time
 
 import cv2
 import matplotlib.image as mpimg
@@ -240,13 +242,113 @@ def get_driving_styles(cfg):
         exit(1)
 
 
-def plot_history(history, cfg, name, vae):
-    # summarize history for loss
-    plt.plot(history['loss'])
-    plt.plot(history['val_loss'])
-    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
-    plt.xlabel('epoch')
-    plt.title('training ' + name)
-    plt.legend(['train', 'val'], loc='upper left')
-    plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
+def plot_history(history, cfg, vae):
+    if "VAE" in vae.loss:
+
+        plt.plot(history['reconstruction_loss'])
+        plt.plot(history['kl_loss'])
+        plt.plot(history['val_reconstruction_loss'])
+        plt.plot(history['val_kl_loss'])
+        plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
+        plt.xlabel('epoch')
+        plt.title('training')
+        plt.legend(['reconstruction_loss', 'kl_loss', 'val_reconstruction_loss', 'val_kl_loss'], loc='upper left')
+        plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
+
+        plt.show()
+    else:
+
+        plt.plot(history['reconstruction_loss'])
+        plt.plot(history['val_reconstruction_loss'])
+        plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
+        plt.xlabel('epoch')
+        plt.title('training')
+        plt.legend(['reconstruction_loss', 'val_reconstruction_loss'], loc='upper left')
+        plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
+
+        plt.show()
+
+
+def load_all_images(cfg):
+    """
+    Load all driving images
+    TODO: inefficient
+    """
+    drive = get_driving_styles(cfg)
+
+    print("Loading data set " + str(cfg.TRACK) + str(drive))
+
+    start = time.time()
+
+    x = None
+    path = None
+
+    for drive_style in drive:
+        try:
+            path = os.path.join(cfg.TRAINING_DATA_DIR,
+                                cfg.SIMULATION_DATA_DIR,
+                                cfg.TRACK,
+                                drive_style,
+                                'driving_log.csv')
+            data_df = pd.read_csv(path)
+
+            if x is None:
+                x = data_df[['center']].values
+            else:
+                x = np.concatenate((x, data_df[['center']].values), axis=0)
+
+            if cfg.TRACK == "track1":
+                # print("Loading only the first 1102 images from %s (one lap)" % track)
+                x = x[:cfg.TRACK1_IMG_PER_LAP]
+            else:
+                print("Not yet implemented! Quitting...")
+                exit()
+
+        except FileNotFoundError:
+            print("Unable to read file %s" % path)
+            continue
+
+    if x is None:
+        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
+        exit()
+
+    # load the images
+    images = np.empty([len(x), IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
+
+    # TODO: loading only center image for now.
+    print("WARNING! For evaluation, loading only front-facing images")
+
+    for i, path in enumerate(x):
+        image = load_image(cfg.SIMULATION_DATA_DIR, path[0])  # load center images
+
+        # visualize whether the input image as expected
+        # import matplotlib.pyplot as plt
+        # plt.imshow(image)
+        # plt.show()
+
+        images[i] = image
+
+    duration_train = time.time() - start
+    print("Loading data set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+
+    print("Data set: " + str(len(images)) + " elements")
+
+    return images
+
+
+def plot_reconstruction_losses(losses, name):
+    plt.figure(figsize=(20, 4))
+    x_losses = np.arange(len(losses))
+    plt.plot(x_losses, losses, color='blue', alpha=0.7)
+
+    plt.ylabel('Loss')
+    plt.xlabel('Number of Instances')
+    plt.title("Reconstruction error for " + name)
+
+    plt.savefig('plots/reconstruction-plot-' + name + '.png')
+
+    plt.show()
+
+    plt.clf()
+    plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
     plt.show()

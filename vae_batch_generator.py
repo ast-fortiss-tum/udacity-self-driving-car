@@ -5,17 +5,16 @@
 import random
 
 import numpy as np
-
-from variational_autoencoder import normalize_and_reshape
-from utils import load_image, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, resize, crop, rgb2yuv
 from tensorflow.keras.utils import Sequence
+
+from utils import load_image, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, resize, crop
+from variational_autoencoder import normalize_and_reshape
 
 
 class Generator(Sequence):
 
     # TODO: model is unnecessary?
-    def __init__(self, model, path_to_pictures, is_training, cfg):
-        self.model = model
+    def __init__(self, path_to_pictures, is_training, cfg):
         self.path_to_pictures = path_to_pictures
         self.is_training = is_training
         self.cfg = cfg

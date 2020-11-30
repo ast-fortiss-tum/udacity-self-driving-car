@@ -1,25 +1,26 @@
 import datetime
 import os
+import shutil
 import time
 from pathlib import Path
 
+import keras
 import numpy as np
 import pandas as pd
 import tensorflow
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-import shutil
+from tensorflow import keras
 
-import utils
 from config import Config
-from utils import plot_history
+from utils import RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, RESIZED_IMAGE_HEIGHT
+from utils import plot_history, get_driving_styles
 from vae_batch_generator import Generator
-from variational_autoencoder import VariationalAutoencoder
+from variational_autoencoder import VAE, Encoder, Decoder
 
 np.random.seed(0)
 
 from tensorflow.python.framework import tensor_util
-from tensorflow.python import keras
 
 
 def is_tensor(x):
@@ -30,7 +31,7 @@ def load_data_for_vae(cfg):
     """
     Load training data and split it into training and validation set
     """
-    drive = utils.get_driving_styles(cfg)
+    drive = get_driving_styles(cfg)
 
     print("Loading training set " + str(cfg.TRACK) + str(drive))
 
@@ -70,6 +71,9 @@ def load_data_for_vae(cfg):
     if cfg.TRACK == "track1":
         print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
         x = x[:cfg.TRACK1_IMG_PER_LAP]
+    else:
+        print("Incorrect cfg.TRACK option provided")
+        exit()
 
     try:
         x_train, x_test = train_test_split(x, test_size=cfg.TEST_SIZE, random_state=0)
@@ -91,7 +95,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
     Train the VAE model
     """
 
-    # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
+    # do not use .h5 extension when saving/loading custom objects
     my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
 
     if delete_model:
@@ -103,70 +107,84 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
         print("Model %s already exists. Quit training." % str(name))
         return
 
-    es = keras.callbacks.EarlyStopping(monitor='loss', patience=5, mode="auto", restore_best_weights=True)
+    # es = keras.callbacks.EarlyStopping(monitor='loss', patience=5, mode="auto", restore_best_weights=True)
 
     start = time.time()
 
-    model, encoder, decoder = vae.create_autoencoder()
-
     x_train = shuffle(x_train, random_state=0)
     x_test = shuffle(x_test, random_state=0)
-    train_generator = Generator(model, x_train, True, cfg)
-    val_generator = Generator(model, x_test, True, cfg)
+    train_generator = Generator(x_train, True, cfg)
+    val_generator = Generator(x_test, True, cfg)
 
-    history = model.fit(train_generator,
-                        validation_data=val_generator,
-                        shuffle=False,
-                        epochs=cfg.NUM_EPOCHS_SAO_MODEL,
-                        callbacks=[es],
-                        # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
-                        verbose=1)
+    history = vae.fit(train_generator,
+                      validation_data=val_generator,
+                      shuffle=True,
+                      epochs=cfg.NUM_EPOCHS_SAO_MODEL,
+                      # callbacks=[es],
+                      verbose=1)
 
     duration_train = time.time() - start
     print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
-    plot_history(history.history, cfg, name, vae)
+    plot_history(history.history, cfg, vae)
 
     # save the last model (might not be the best)
-    # TODO: save the encoder and decoder as well
-    # TODO: do not use .h5 extension when saving/loading custom objects. No longer compatible across platforms!
-    tensorflow.keras.models.save_model(model, my_file.__str__())
-
     encoder_name = name.replace("VAE-", "encoder-")
     encoder_file = Path(os.path.join(cfg.SAO_MODELS_DIR, encoder_name))
-    tensorflow.keras.models.save_model(encoder, encoder_file.__str__())
+    vae.encoder.save(encoder_file.__str__(), save_format="tf")
 
     decoder_name = name.replace("VAE-", "decoder-")
     decoder_file = Path(os.path.join(cfg.SAO_MODELS_DIR, decoder_name))
-    tensorflow.keras.models.save_model(decoder, decoder_file.__str__())
+    vae.decoder.save(decoder_file.__str__(), save_format="tf")
 
     # save history file
     np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
 
 
-def setup_vae(cfg):
+def setup_vae(cfg, load_vae_from_disk):
     if cfg.USE_ONLY_CENTER_IMG:
-        print("cfg.USE_ONLY_CENTER_IMG = " + str(cfg.USE_ONLY_CENTER_IMG) + ". Using only front-facing camera images")
+        print("cfg.USE_ONLY_CENTER_IMG = "
+              + str(cfg.USE_ONLY_CENTER_IMG)
+              + ". Using only front-facing camera images")
         use_center = '-centerimg-'
     else:
-        print("cfg.USE_ONLY_CENTER_IMG = " + str(cfg.USE_ONLY_CENTER_IMG) + ". Using all camera images")
+        print("cfg.USE_ONLY_CENTER_IMG = "
+              + str(cfg.USE_ONLY_CENTER_IMG)
+              + ". Using all camera images")
         use_center = '-allimg-'
 
     if cfg.USE_CROP:
-        print("cfg.USE_CROP = " + str(cfg.USE_CROP) + ". Cropping the image")
+        print("cfg.USE_CROP = "
+              + str(cfg.USE_CROP)
+              + ". Cropping the image")
         use_crop = 'usecrop'
     else:
-        print("cfg.USE_CROP = " + str(cfg.USE_CROP) + ". Using the entire image")
+        print("cfg.USE_CROP = "
+              + str(cfg.USE_CROP)
+              + ". Using the entire image")
         use_crop = 'nocrop'
 
     name = "VAE-" + cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
-    vae = VariationalAutoencoder(model_name=name, loss=cfg.LOSS_SAO_MODEL)
 
+    if load_vae_from_disk:
+        encoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "encoder-"))
+        decoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "decoder-"))
+
+        vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, encoder=encoder, decoder=decoder)
+        vae.compile()
+    else:
+        encoder = Encoder().call(RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
+        decoder = Decoder().call((2,))
+
+        vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, encoder=encoder, decoder=decoder)
+
+    vae.compile(optimizer=keras.optimizers.Adam())
+    
     return vae, name
 
 
 def run_training(cfg, x_test, x_train):
-    vae, name = setup_vae(cfg)
+    vae, name = setup_vae(cfg, load_vae_from_disk=False)
     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True)
 
 

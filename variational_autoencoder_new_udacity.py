@@ -143,7 +143,7 @@ cfg.from_pyfile("myconfig.py")
 x_train, x_test = load_data_for_vae(cfg)
 udacity_images = np.concatenate([x_train, x_test], axis=0)
 
-if not os.path.exists('udacity-vae-encoder') or not os.path.exists('udacity-mse-encoder'):
+if (not os.path.exists('sao/udacity-vae-encoder')) and (not os.path.exists('udacity-mse-encoder')):
     encoder = Encoder().call(RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
     decoder = Decoder().call((2,))
 
@@ -154,8 +154,8 @@ if not os.path.exists('udacity-vae-encoder') or not os.path.exists('udacity-mse-
 
     x_train = shuffle(x_train, random_state=0)
     x_test = shuffle(x_test, random_state=0)
-    train_generator = Generator(vae, x_train, True, cfg)
-    val_generator = Generator(vae, x_test, True, cfg)
+    train_generator = Generator(x_train, True, cfg)
+    val_generator = Generator(x_test, True, cfg)
 
     history = vae.fit(train_generator,
                       validation_data=val_generator,
@@ -195,8 +195,8 @@ else:
         encoder = keras.models.load_model('udacity-mse-encoder')
         decoder = keras.models.load_model('udacity-mse-decoder')
     else:
-        encoder = keras.models.load_model('udacity-vae-encoder')
-        decoder = keras.models.load_model('udacity-vae-decoder')
+        encoder = keras.models.load_model('sao/udacity-vae-encoder')
+        decoder = keras.models.load_model('sao/decoder-track1-VAEloss-allimg-nocrop')
 
     vae = VAE(encoder, decoder, use_mse=USE_MSE)
     vae.compile(optimizer=keras.optimizers.Adam())
