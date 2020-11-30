@@ -1,5 +1,6 @@
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from sklearn.utils import shuffle
@@ -17,6 +18,7 @@ from vae_batch_generator import Generator
 from variational_autoencoder import normalize_and_reshape
 
 original_dim = RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS
+USE_MSE = False
 
 
 class Sampling(layers.Layer):
@@ -73,32 +75,62 @@ class Decoder(layers.Layer):
 
 # Define the VAE as a `Model` with a custom `train_step`
 class VAE(keras.Model):
-    def __init__(self, encoder, decoder, **kwargs):
+    def __init__(self, encoder, decoder, use_mse, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.encoder = encoder
         self.decoder = decoder
+        self.use_mse = use_mse
 
-    def call(self, data):
+    def train_step(self, data):
         if isinstance(data, tuple):
             data = data[0]
         with tf.GradientTape() as tape:
             z_mean, z_log_var, z = self.encoder(data)
             reconstruction = self.decoder(z)
-            reconstruction_loss = tf.reduce_mean(
-                keras.losses.mean_squared_error(data, reconstruction)
-            )
+            reconstruction_loss = tf.reduce_mean(keras.losses.mean_squared_error(data, reconstruction))
             reconstruction_loss *= RESIZED_IMAGE_WIDTH * RESIZED_IMAGE_HEIGHT
+
+            if not self.use_mse:
+                kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
+                kl_loss = tf.reduce_mean(kl_loss)
+                kl_loss *= -0.5
+                total_loss = reconstruction_loss + kl_loss
+                grads = tape.gradient(total_loss, self.trainable_weights)
+                self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+                return {
+                    "loss": total_loss,
+                    "reconstruction_loss": reconstruction_loss,
+                    "kl_loss": kl_loss,
+                }
+            else:
+                total_loss = reconstruction_loss
+                grads = tape.gradient(total_loss, self.trainable_weights)
+                self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+                return {
+                    "loss": total_loss,
+                    "reconstruction_loss": reconstruction_loss,
+                }
+
+    def call(self, inputs):
+        z_mean, z_log_var, z = encoder(inputs)
+        reconstruction = decoder(z)
+        reconstruction_loss = tf.reduce_mean(keras.losses.mean_squared_error(inputs, reconstruction))
+        reconstruction_loss *= RESIZED_IMAGE_WIDTH * RESIZED_IMAGE_HEIGHT
+
+        if not self.use_mse:
             kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
             kl_loss = tf.reduce_mean(kl_loss)
             kl_loss *= -0.5
             total_loss = reconstruction_loss + kl_loss
-        grads = tape.gradient(total_loss, self.trainable_weights)
-        self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
-        return {
-            "loss": total_loss,
-            "reconstruction_loss": reconstruction_loss,
-            "kl_loss": kl_loss,
-        }
+            self.add_metric(kl_loss, name='kl_loss', aggregation='mean')
+            self.add_metric(total_loss, name='total_loss', aggregation='mean')
+            self.add_metric(reconstruction_loss, name='reconstruction_loss', aggregation='mean')
+            return reconstruction
+        else:
+            total_loss = reconstruction_loss
+            self.add_metric(total_loss, name='total_loss', aggregation='mean')
+            self.add_metric(reconstruction_loss, name='reconstruction_loss', aggregation='mean')
+            return reconstruction
 
 
 """
@@ -111,14 +143,14 @@ cfg.from_pyfile("myconfig.py")
 x_train, x_test = load_data_for_vae(cfg)
 udacity_images = np.concatenate([x_train, x_test], axis=0)
 
-if not os.path.exists('udacity-vae-encoder'):
+if not os.path.exists('udacity-vae-encoder') or not os.path.exists('udacity-mse-encoder'):
     encoder = Encoder().call(RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
     decoder = Decoder().call((2,))
 
-    vae = VAE(encoder, decoder)
+    vae = VAE(encoder, decoder, use_mse=USE_MSE)
     vae.compile(optimizer=keras.optimizers.Adam())
 
-    es = keras.callbacks.EarlyStopping(monitor='loss', patience=5, mode="auto", restore_best_weights=True)
+    # es = keras.callbacks.EarlyStopping(monitor='loss', patience=5, mode="auto", restore_best_weights=True)
 
     x_train = shuffle(x_train, random_state=0)
     x_test = shuffle(x_test, random_state=0)
@@ -129,93 +161,76 @@ if not os.path.exists('udacity-vae-encoder'):
                       validation_data=val_generator,
                       shuffle=False,
                       epochs=5,
-                      callbacks=[es],
+                      # callbacks=[es],
                       # steps_per_epoch=len(x_train) // cfg.BATCH_SIZE,
                       verbose=1)
 
-    encoder.save('udacity-vae-encoder')
-    decoder.save('udacity-vae-decoder')
+    if not vae.use_mse:
+        encoder.save('udacity-vae-encoder')
+        decoder.save('udacity-vae-decoder')
+
+        plt.plot(history.history['reconstruction_loss'])
+        plt.plot(history.history['kl_loss'])
+        plt.plot(history.history['val_reconstruction_loss'])
+        plt.plot(history.history['val_kl_loss'])
+        plt.ylabel('reconstruction loss new udacity MSE loss')
+        plt.xlabel('epoch')
+        plt.title('training')
+        plt.legend(['reconstruction_loss', 'kl_loss', 'val_reconstruction_loss', 'val_kl_loss'], loc='upper left')
+        plt.show()
+    else:
+        encoder.save('udacity-mse-encoder')
+        decoder.save('udacity-mse-decoder')
+
+        plt.plot(history.history['reconstruction_loss'])
+        plt.plot(history.history['val_reconstruction_loss'])
+        plt.ylabel('reconstruction loss new udacity VAE loss')
+        plt.xlabel('epoch')
+        plt.title('training')
+        plt.legend(['reconstruction_loss', 'val_reconstruction_loss'], loc='upper left')
+        plt.show()
 
 else:
+    if USE_MSE:
+        encoder = keras.models.load_model('udacity-mse-encoder')
+        decoder = keras.models.load_model('udacity-mse-decoder')
+    else:
+        encoder = keras.models.load_model('udacity-vae-encoder')
+        decoder = keras.models.load_model('udacity-vae-decoder')
 
-    encoder = keras.models.load_model('udacity-vae-encoder')
-    decoder = keras.models.load_model('udacity-vae-decoder')
-
-    vae = VAE(encoder, decoder)
+    vae = VAE(encoder, decoder, use_mse=USE_MSE)
     vae.compile(optimizer=keras.optimizers.Adam())
 
 udacity_images = load_all_images(cfg)
 
 i = 0
+losses = []
 for x in tqdm(udacity_images):
     i = i + 1
 
-    if i % 100 == 0:
-        x = utils.resize(x)
-        x = normalize_and_reshape(x)
+    x = utils.resize(x)
+    x = normalize_and_reshape(x)
 
+    loss = vae.test_on_batch(x)[1]  # total loss
+    losses.append(loss)
+
+    if i % 50 == 0:
         z_mean, z_log_var, z = encoder.predict(x)
         decoded = decoder.predict(z)
 
-        loss = vae.test_on_batch(x)
-
+        reconstructed = vae.predict(x)
         plot_pictures_orig_rec(x, decoded, None, loss)
 
-# def plot_latent(decoder):
-#     # display a n*n 2D manifold of digits
-#     n = 30
-#     digit_size = 28
-#     scale = 2.0
-#     figsize = 15
-#     figure = np.zeros((digit_size * n, digit_size * n))
-#     # linearly spaced coordinates corresponding to the 2D plot
-#     # of digit classes in the latent space
-#     grid_x = np.linspace(-scale, scale, n)
-#     grid_y = np.linspace(-scale, scale, n)[::-1]
-#
-#     for i, yi in enumerate(grid_y):
-#         for j, xi in enumerate(grid_x):
-#             z_sample = np.array([[xi, yi]])
-#             x_decoded = decoder.predict(z_sample)
-#             digit = x_decoded[0].reshape(digit_size, digit_size)
-#             figure[
-#             i * digit_size: (i + 1) * digit_size,
-#             j * digit_size: (j + 1) * digit_size,
-#             ] = digit
-#
-#     plt.figure(figsize=(figsize, figsize))
-#     start_range = digit_size // 2
-#     end_range = n * digit_size + start_range
-#     pixel_range = np.arange(start_range, end_range, digit_size)
-#     sample_range_x = np.round(grid_x, 1)
-#     sample_range_y = np.round(grid_y, 1)
-#     plt.xticks(pixel_range, sample_range_x)
-#     plt.yticks(pixel_range, sample_range_y)
-#     plt.xlabel("z[0]")
-#     plt.ylabel("z[1]")
-#     plt.imshow(figure, cmap="Greys_r")
-#     plt.show()
-#
-#
-# plot_latent(decoder)
-#
-# """
-# ## Display how the latent space clusters different digit classes
-# """
-#
-#
-# def plot_label_clusters(encoder, data, labels):
-#     # display a 2D plot of the digit classes in the latent space
-#     z_mean, _, _ = encoder.predict(data)
-#     plt.figure(figsize=(12, 10))
-#     plt.scatter(z_mean[:, 0], z_mean[:, 1], c=labels)
-#     plt.colorbar()
-#     plt.xlabel("z[0]")
-#     plt.ylabel("z[1]")
-#     plt.show()
-#
-#
-# (x_train, y_train), _ = keras.datasets.mnist.load_data()
-# x_train = np.expand_dims(x_train, -1).astype("float32") / 255
-#
-# plot_label_clusters(encoder, x_train, y_train)
+plt.figure(figsize=(20, 4))
+x_losses = np.arange(len(losses))
+plt.plot(x_losses, losses, color='blue', alpha=0.7)
+
+plt.ylabel('Loss')
+plt.xlabel('Number of Instances')
+plt.title("Reconstruction error")
+
+plt.show()
+
+plt.clf()
+plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
+plt.show()
