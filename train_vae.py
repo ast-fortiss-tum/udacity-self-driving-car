@@ -169,17 +169,13 @@ def setup_vae(cfg, load_vae_from_disk):
     if load_vae_from_disk:
         encoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "encoder-"))
         decoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "decoder-"))
-
-        vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, encoder=encoder, decoder=decoder)
-        vae.compile()
     else:
         encoder = Encoder().call(RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
         decoder = Decoder().call((2,))
 
-        vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, encoder=encoder, decoder=decoder)
+    vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, encoder=encoder, decoder=decoder)
+    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
 
-    vae.compile(optimizer=keras.optimizers.Adam())
-    
     return vae, name
 
 
