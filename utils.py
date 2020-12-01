@@ -243,31 +243,15 @@ def get_driving_styles(cfg):
 
 
 def plot_history(history, cfg, vae):
-    if vae.lossFunc[0] == "VAE":
+    plt.plot(history['loss'])
+    plt.plot(history['val_total_loss'])
+    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
+    plt.xlabel('epoch')
+    plt.title('training')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
 
-        plt.plot(history['loss'])
-        # plt.plot(history['kl_loss'])
-        plt.plot(history['val_total_loss'])
-        # plt.plot(history['val_kl_loss'])
-        plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
-        plt.xlabel('epoch')
-        plt.title('training')
-        # plt.legend(['reconstruction_loss', 'kl_loss', 'val_reconstruction_loss', 'val_kl_loss'], loc='upper left')
-        plt.legend(['reconstruction_loss', 'val_reconstruction_loss'], loc='upper left')
-        plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
-
-        plt.show()
-    else:
-
-        plt.plot(history['loss'])
-        plt.plot(history['val_total_loss'])
-        plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
-        plt.xlabel('epoch')
-        plt.title('training')
-        plt.legend(['reconstruction_loss', 'val_reconstruction_loss'], loc='upper left')
-        plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
-
-        plt.show()
+    plt.show()
 
 
 def load_all_images(cfg):
