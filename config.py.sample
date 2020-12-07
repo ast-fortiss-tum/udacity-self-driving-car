@@ -1,5 +1,5 @@
 TRAINING_DATA_DIR = "datasets"  # root folder for all driving training sets
-SIMULATION_DATA_DIR = "dataset5"  # the driving training set to use
+TRAINING_SET_DIR = "dataset5"  # the driving training set to use
 TEST_SIZE = 0.05  # split of training data used for the test set
 NUM_EPOCHS_SDC_MODEL = 50  # training epochs for the self-driving car model
 NUM_EPOCHS_SAO_MODEL = 50  # training epochs for the autoencoder-based self-assessment oracle

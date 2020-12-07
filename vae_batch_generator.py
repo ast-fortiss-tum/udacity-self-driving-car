@@ -8,7 +8,7 @@ import numpy as np
 from tensorflow.keras.utils import Sequence
 
 from utils import load_image, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, resize, crop
-from variational_autoencoder import normalize_and_reshape
+from vae import normalize_and_reshape
 
 
 class Generator(Sequence):
@@ -29,21 +29,21 @@ class Generator(Sequence):
 
             if self.cfg.USE_ONLY_CENTER_IMG:
                 center = batch_paths[i][0]  # select the center image from the batch
-                image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
+                image = load_image(self.cfg.TRAINING_SET_DIR, center)
             else:
                 center, left, right = batch_paths[i]
 
                 choices = [0, 1, 2]  # 0=center, 1=left, 2=right
                 choice = random.choice(choices)
                 if choice == 0:
-                    image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
+                    image = load_image(self.cfg.TRAINING_SET_DIR, center)
                 elif choice == 1:
-                    image = load_image(self.cfg.SIMULATION_DATA_DIR, left)
+                    image = load_image(self.cfg.TRAINING_SET_DIR, left)
                 elif choice == 2:
-                    image = load_image(self.cfg.SIMULATION_DATA_DIR, right)
+                    image = load_image(self.cfg.TRAINING_SET_DIR, right)
                 else:
                     print('wrong image index in vae_batch_generator. Using default\'s 0 (center)')
-                    image = load_image(self.cfg.SIMULATION_DATA_DIR, center)
+                    image = load_image(self.cfg.TRAINING_SET_DIR, center)
 
             if self.cfg.USE_CROP:
                 image = crop(image)

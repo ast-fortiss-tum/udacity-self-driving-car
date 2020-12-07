@@ -8,6 +8,16 @@ import types
 class Config:
 
     def __init__(self):
+        self.MAX_SPEED = None
+        self.MIN_SPEED = None
+        self.SIMULATION_NAME = None
+        self.SAO_THRESHOLD = None
+        self.MAX_LAPS = None
+        self.USE_PREDICTIVE_UNCERTAINTY = None
+        self.TESTING_DATA_DIR = None
+        self.ANOMALY_DETECTOR_NAME = None
+        self.SDC_MODELS_DIR = None
+        self.SDC_MODEL_NAME = None
         self.TRACK = None
         self.USE_CROP = None
         self.USE_ONLY_CENTER_IMG = None
@@ -45,13 +55,13 @@ class Config:
                 print(attr, ":", getattr(self, attr))
 
 
-def load_config(config_path=None, myconfig="myconfig.py"):
+def load_config(config_path=None, myconfig="config_my.py"):
     if config_path is None:
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
-        config_path = os.path.join(main_path, 'myconfig.py')
+        config_path = os.path.join(main_path, 'config_my.py')
         if not os.path.exists(config_path):
-            local_config = os.path.join(os.path.curdir, 'myconfig.py')
+            local_config = os.path.join(os.path.curdir, 'config_my.py')
             if os.path.exists(local_config):
                 config_path = local_config
 
@@ -60,8 +70,8 @@ def load_config(config_path=None, myconfig="myconfig.py"):
     cfg.from_pyfile(config_path)
 
     # look for the optional myconfig.txt in the same path.
-    print("myconfig", myconfig)
-    personal_cfg_path = config_path.replace("myconfig.py", myconfig)
+    print("config_my", myconfig)
+    personal_cfg_path = config_path.replace("config_my.py", myconfig)
     if os.path.exists(personal_cfg_path):
         print("loading personal config over-rides from", myconfig)
         personal_cfg = Config()

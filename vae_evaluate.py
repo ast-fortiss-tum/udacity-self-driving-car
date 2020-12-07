@@ -1,14 +1,15 @@
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
 import utils
 from config import Config
-from train_vae import setup_vae
+from vae_train import setup_vae
 from utils import load_all_images
 from utils import plot_reconstruction_losses
-from variational_autoencoder import normalize_and_reshape
+from vae import normalize_and_reshape, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
 
 np.random.seed(0)
 
@@ -51,27 +52,27 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
     return losses
 
 
-# def plot_picture_orig_dec(orig, dec, picture_name, losses, num=10):
-#     n = num
-#     plt.figure(figsize=(40, 8))
-#     for i in range(n):
-#         # display original
-#         ax = plt.subplot(2, n, i + 1)
-#         plt.imshow(orig[i].reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
-#         ax.get_xaxis().set_visible(False)
-#         ax.get_yaxis().set_visible(False)
-#         plt.title("Original Photo")
-#
-#         # display reconstruction
-#         ax = plt.subplot(2, n, i + 1 + n)
-#         plt.imshow(dec[i].reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
-#         ax.get_xaxis().set_visible(False)
-#         ax.get_yaxis().set_visible(False)
-#         plt.title("Reconstructed loss %.4f" % losses[i])
-#
-#     plt.savefig(picture_name, bbox_inches='tight')
-#     plt.show()
-#     plt.close()
+def plot_picture_orig_dec(orig, dec, picture_name, losses, num=10):
+    n = num
+    plt.figure(figsize=(40, 8))
+    for i in range(n):
+        # display original
+        ax = plt.subplot(2, n, i + 1)
+        plt.imshow(orig[i].reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        plt.title("Original Photo")
+
+        # display reconstruction
+        ax = plt.subplot(2, n, i + 1 + n)
+        plt.imshow(dec[i].reshape(RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        plt.title("Reconstructed loss %.4f" % losses[i])
+
+    plt.savefig(picture_name, bbox_inches='tight')
+    plt.show()
+    plt.close()
 
 
 # def draw_best_worst_results(dataset, autoencoder, losses, picture_name, numb_of_picture=10):
@@ -172,7 +173,7 @@ def load_and_eval_vae(cfg, dataset):
 
 def main():
     cfg = Config()
-    cfg.from_pyfile("myconfig.py")
+    cfg.from_pyfile("config_my.py")
 
     dataset = load_all_images(cfg)
     load_and_eval_vae(cfg, dataset)

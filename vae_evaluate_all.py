@@ -1,10 +1,10 @@
 import utils
 from config import Config
-from evaluate_vae import load_all_images, load_and_eval_vae
+from vae_evaluate import load_all_images, load_and_eval_vae
 
 if __name__ == '__main__':
     cfg = Config()
-    cfg.from_pyfile("myconfig.py")
+    cfg.from_pyfile("config_my.py")
 
     drive = utils.get_driving_styles(cfg)
 

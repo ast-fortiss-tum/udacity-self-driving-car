@@ -4,7 +4,7 @@ import shutil
 import time
 from pathlib import Path
 
-import keras
+from tensorflow import keras
 import numpy as np
 import pandas as pd
 import tensorflow
@@ -16,15 +16,15 @@ from config import Config
 from utils import RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, RESIZED_IMAGE_HEIGHT
 from utils import plot_history, get_driving_styles
 from vae_batch_generator import Generator
-from variational_autoencoder import VAE, Encoder, Decoder
+from vae import VAE, Encoder, Decoder
 
 np.random.seed(0)
 
-from tensorflow.python.framework import tensor_util
-
-
-def is_tensor(x):
-    return tensor_util.is_tensor(x)
+# from tensorflow.python.framework import tensor_util
+#
+#
+# def is_tensor(x):
+#     return tensor_util.is_tensor(x)
 
 
 def load_data_for_vae(cfg):
@@ -45,7 +45,7 @@ def load_data_for_vae(cfg):
     for drive_style in drive:
         try:
             path = os.path.join(cfg.TRAINING_DATA_DIR,
-                                cfg.SIMULATION_DATA_DIR,
+                                cfg.TRAINING_SET_DIR,
                                 cfg.TRACK,
                                 drive_style,
                                 'driving_log.csv')
@@ -170,8 +170,8 @@ def setup_vae(cfg, load_vae_from_disk):
         encoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "encoder-"))
         decoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "decoder-"))
     else:
-        encoder = Encoder().call(RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
-        decoder = Decoder().call((2,))
+        encoder = Encoder().call(RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS, )
+        decoder = Decoder().call((2,), )
 
     vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, encoder=encoder, decoder=decoder)
     vae.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
@@ -186,7 +186,7 @@ def run_training(cfg, x_test, x_train):
 
 def main():
     cfg = Config()
-    cfg.from_pyfile("myconfig.py")
+    cfg.from_pyfile("config_my.py")
 
     x_train, x_test = load_data_for_vae(cfg)
     run_training(cfg, x_test, x_train)

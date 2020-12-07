@@ -1,10 +1,10 @@
 import utils
 from config import Config
-from train_vae import load_data_for_vae, run_training
+from vae_train import load_data_for_vae, run_training
 
 if __name__ == '__main__':
     cfg = Config()
-    cfg.from_pyfile("myconfig.py")
+    cfg.from_pyfile("config_my.py")
 
     drive = utils.get_driving_styles(cfg)
 

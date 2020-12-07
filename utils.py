@@ -13,7 +13,8 @@ from tensorflow.keras import backend as K
 
 RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH = 80, 160
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
-INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
+# INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
+INPUT_SHAPE = (RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
 csv_fieldnames_improved_simulator = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
@@ -150,6 +151,7 @@ def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=
     (The steering angle is associated with the center image)
     """
     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
+    # TODO: flip should be applied to left/right only and w/ no probability
     image, steering_angle = random_flip(image, steering_angle)
     image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
     image = random_shadow(image)
@@ -168,7 +170,10 @@ def write_csv_line(filename, row):
     if filename is not None:
         filename += "/driving_log.csv"
         with open(filename, mode='a') as result_file:
-            writer = csv.writer(result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+            writer = csv.writer(result_file,
+                                delimiter=',',
+                                quotechar='"',
+                                quoting=csv.QUOTE_MINIMAL,
                                 lineterminator='\n')
             writer.writerow(row)
             result_file.flush()
@@ -190,44 +195,30 @@ def create_csv_results_file_header(file_name, fieldnames):
     return None
 
 
-def create_output_dir(args, fieldnames):
-    path = os.path.join(args.data_dir, args.sim_name, "IMG")
-    csv_path = os.path.join(args.data_dir, args.sim_name)
-    print("Creating image folder at {}".format(path))
-    if not os.path.exists(path):
-        os.makedirs(path)
-        create_csv_results_file_header(csv_path, fieldnames)
-    else:
+def create_output_dir(cfg, fieldnames):
+    path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, "IMG")
+    csv_path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME)
+
+    if os.path.exists(path):
+        print("Deleting image folder at {}".format(path))
         shutil.rmtree(csv_path)
-        os.makedirs(path)
-        create_csv_results_file_header(csv_path, fieldnames)
+
+    print("Creating image folder at {}".format(path))
+    os.makedirs(path)
+    create_csv_results_file_header(csv_path, fieldnames)
 
 
-def load_autoencoder(model):
-    autoencoder = model.create_autoencoder()
-    autoencoder.load_weights(model.model_name)
-    assert autoencoder is not None
-    return autoencoder
-
-
-def load_driving_data(args: object) -> object:
+def load_driving_data(cfg: object) -> object:
+    path = None
+    data_df = None
     try:
-        path = os.path.join(args.data_dir, args.sim_name, 'driving_log.csv')
-        # print(path)
+        path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, 'driving_log.csv')
         data_df = pd.read_csv(path, keep_default_na=False)
     except FileNotFoundError:
         print("Unable to read file %s" % path)
         exit()
 
     return data_df
-
-
-def s2b(s):
-    """
-    Converts a string to boolean value
-    """
-    s = s.lower()
-    return s == 'true' or s == 'yes' or s == 'y' or s == '1'
 
 
 def get_driving_styles(cfg):
@@ -271,7 +262,7 @@ def load_all_images(cfg):
     for drive_style in drive:
         try:
             path = os.path.join(cfg.TRAINING_DATA_DIR,
-                                cfg.SIMULATION_DATA_DIR,
+                                cfg.TRAINING_SET_DIR,
                                 cfg.TRACK,
                                 drive_style,
                                 'driving_log.csv')
@@ -304,7 +295,7 @@ def load_all_images(cfg):
     print("WARNING! For evaluation, loading only front-facing images")
 
     for i, path in enumerate(x):
-        image = load_image(cfg.SIMULATION_DATA_DIR, path[0])  # load center images
+        image = load_image(cfg.TRAINING_SET_DIR, path[0])  # load center images
 
         # visualize whether the input image as expected
         # import matplotlib.pyplot as plt
@@ -337,3 +328,7 @@ def plot_reconstruction_losses(losses, name):
     plt.clf()
     plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
     plt.show()
+
+
+def laplacian_variance(images):
+    return [cv2.Laplacian(image, cv2.CV_32F).var() for image in images]
