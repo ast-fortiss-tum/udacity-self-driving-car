@@ -31,7 +31,7 @@ SAO_THRESHOLD = 0.045  # the SAO threshold
 MAX_LAPS = 1  # max laps before sim stops
 
 # autoencoder-based self-assessment oracle settings
-NUM_EPOCHS_SAO_MODEL = 50  # training epochs for the autoencoder-based self-assessment oracle
+NUM_EPOCHS_SAO_MODEL = 100  # training epochs for the autoencoder-based self-assessment oracle
 SAO_LATENT_DIM = 2  # dimension of the latent space
 SAO_INTERMEDIATE_DIM = 512  # dimension of the latent space
 USE_ONLY_CENTER_IMG = False  # train the autoencoder-based self-assessment oracle only using front-facing camera images
