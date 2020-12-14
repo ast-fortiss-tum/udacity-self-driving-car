@@ -90,14 +90,18 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
     """
 
     # do not use .h5 extension when saving/loading custom objects
-    my_file = Path(os.path.join(cfg.SAO_MODELS_DIR, name))
+    my_encoder = Path(os.path.join(cfg.SAO_MODELS_DIR, name.replace("VAE-", "encoder-")))
+    my_decoder = Path(os.path.join(cfg.SAO_MODELS_DIR, name.replace("VAE-", "decoder-")))
 
     if delete_model:
-        print("Deleting model %s" % str(my_file))
-        shutil.rmtree(my_file, ignore_errors=True)
-        print("Model %s deleted" % str(my_file))
+        print("Deleting model %s" % str(my_encoder))
+        shutil.rmtree(my_encoder, ignore_errors=True)
+        print("Model %s deleted" % str(my_encoder))
+        print("Deleting model %s" % str(my_decoder))
+        shutil.rmtree(my_decoder, ignore_errors=True)
+        print("Model %s deleted" % str(my_decoder))
 
-    if my_file.exists():
+    if my_encoder.exists() and my_decoder.exists():
         print("Model %s already exists. Quit training." % str(name))
         return
 
@@ -107,11 +111,6 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
     x_test = shuffle(x_test, random_state=0)
     train_generator = Generator(x_train, True, cfg)
     val_generator = Generator(x_test, True, cfg)
-
-    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
-                                               min_delta=.0005,
-                                               patience=5,
-                                               mode='auto')
 
     history = vae.fit(train_generator,
                       validation_data=val_generator,
