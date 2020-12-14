@@ -108,6 +108,11 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
     train_generator = Generator(x_train, True, cfg)
     val_generator = Generator(x_test, True, cfg)
 
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
+                                               min_delta=.0005,
+                                               patience=5,
+                                               mode='auto')
+
     history = vae.fit(train_generator,
                       validation_data=val_generator,
                       shuffle=True,
@@ -178,9 +183,9 @@ def load_vae(cfg, load_vae_from_disk):
     return vae, name
 
 
-def run_training(cfg, x_test, x_train):
+def run_training(cfg, x_test, x_train, delete_model):
     vae, name = load_vae(cfg, load_vae_from_disk=False)
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True)
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model)
 
 
 def main():
@@ -188,7 +193,7 @@ def main():
     cfg.from_pyfile("config_my.py")
 
     x_train, x_test = load_data_for_vae(cfg)
-    run_training(cfg, x_test, x_train)
+    run_training(cfg, x_test, x_train, delete_model=False)
 
 
 if __name__ == '__main__':
