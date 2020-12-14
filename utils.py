@@ -238,7 +238,7 @@ def plot_history(history, cfg, vae):
     plt.plot(history['val_total_loss'])
     plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
     plt.xlabel('epoch')
-    plt.title('training')
+    plt.title('training' + str(vae.model_name))
     plt.legend(['train', 'val'], loc='upper left')
     plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
 

@@ -101,8 +101,6 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
         print("Model %s already exists. Quit training." % str(name))
         return
 
-    # es = keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, mode="auto", restore_best_weights=True)
-
     start = time.time()
 
     x_train = shuffle(x_train, random_state=0)
@@ -114,7 +112,6 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
                       validation_data=val_generator,
                       shuffle=True,
                       epochs=cfg.NUM_EPOCHS_SAO_MODEL,
-                      # callbacks=[es],
                       verbose=1)
 
     duration_train = time.time() - start
