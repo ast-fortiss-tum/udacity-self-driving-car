@@ -10,7 +10,9 @@ if __name__ == '__main__':
 
     only_center_images = [True, False]
     use_crop = [True, False]
-    loss_func = ["MSE"]  # ["VAE", "MSE"]
+    loss_func = ["VAE", "MSE"]
+    latent_space = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+    intermediate_space = [512, 1024, 4096, 8192]
 
     x_train, x_test = load_data_for_vae(cfg)
 
@@ -20,4 +22,8 @@ if __name__ == '__main__':
             cfg.USE_CROP = crop
             for loss in loss_func:
                 cfg.LOSS_SAO_MODEL = loss
-                run_training(cfg, x_test, x_train)
+                for ld in latent_space:
+                    cfg.SAO_LATENT_DIM = ld
+                    for id in intermediate_space:
+                        cfg.SAO_INTERMEDIATE_DIM = id
+                        run_training(cfg, x_test, x_train)

@@ -4,7 +4,6 @@ import shutil
 import time
 from pathlib import Path
 
-from tensorflow import keras
 import numpy as np
 import pandas as pd
 import tensorflow
@@ -15,18 +14,13 @@ from tensorflow import keras
 from config import Config
 from utils import RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, RESIZED_IMAGE_HEIGHT
 from utils import plot_history, get_driving_styles
-from vae_batch_generator import Generator
 from vae import VAE, Encoder, Decoder
+from vae_batch_generator import Generator
 
 np.random.seed(0)
 
-# from tensorflow.python.framework import tensor_util
-#
-#
-# def is_tensor(x):
-#     return tensor_util.is_tensor(x)
 
-
+# TODO: unify with load_data
 def load_data_for_vae(cfg):
     """
     Load training data and split it into training and validation set
@@ -107,7 +101,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
         print("Model %s already exists. Quit training." % str(name))
         return
 
-    # es = keras.callbacks.EarlyStopping(monitor='loss', patience=5, mode="auto", restore_best_weights=True)
+    # es = keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, mode="auto", restore_best_weights=True)
 
     start = time.time()
 
@@ -141,7 +135,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
     np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
 
 
-def setup_vae(cfg, load_vae_from_disk):
+def load_vae(cfg, load_vae_from_disk):
     if cfg.USE_ONLY_CENTER_IMG:
         print("cfg.USE_ONLY_CENTER_IMG = "
               + str(cfg.USE_ONLY_CENTER_IMG)
@@ -164,23 +158,31 @@ def setup_vae(cfg, load_vae_from_disk):
               + ". Using the entire image")
         use_crop = 'nocrop'
 
-    name = "VAE-" + cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + use_center + use_crop
+    name = "VAE-" + cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss-' \
+           + "intdim" + str(cfg.SAO_INTERMEDIATE_DIM) + "-latent" + str(cfg.SAO_LATENT_DIM) \
+           + use_center + use_crop
 
     if load_vae_from_disk:
         encoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "encoder-"))
         decoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "decoder-"))
     else:
-        encoder = Encoder().call(RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS, )
-        decoder = Decoder().call((2,), )
+        encoder = Encoder().call(cfg.SAO_INTERMEDIATE_DIM,
+                                 cfg.SAO_LATENT_DIM,
+                                 RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS, )
+        decoder = Decoder().call(cfg.SAO_INTERMEDIATE_DIM,
+                                 cfg.SAO_LATENT_DIM,
+                                 (cfg.SAO_LATENT_DIM,), )
 
-    vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, encoder=encoder, decoder=decoder)
+    vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
+              latent_dim=cfg.SAO_LATENT_DIM, encoder=encoder, decoder=decoder)
+
     vae.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
 
     return vae, name
 
 
 def run_training(cfg, x_test, x_train):
-    vae, name = setup_vae(cfg, load_vae_from_disk=False)
+    vae, name = load_vae(cfg, load_vae_from_disk=False)
     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True)
 
 

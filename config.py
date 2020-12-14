@@ -8,6 +8,8 @@ import types
 class Config:
 
     def __init__(self):
+        self.SAO_INTERMEDIATE_DIM = None
+        self.SAO_LATENT_DIM = None
         self.MAX_SPEED = None
         self.MIN_SPEED = None
         self.SIMULATION_NAME = None

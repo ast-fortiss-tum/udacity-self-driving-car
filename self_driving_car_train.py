@@ -79,9 +79,11 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     Train the model
     """
     if cfg.USE_PREDICTIVE_UNCERTAINTY:
-        name = os.path.join(cfg.SDC_MODELS_DIR, cfg.SDC_MODEL_NAME.replace('.h5', '') + '-mc' + '-{epoch:03d}.h5')
+        name = os.path.join(cfg.SDC_MODELS_DIR,
+                            cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-mc' + '-{epoch:03d}.h5')
     else:
-        name = os.path.join(cfg.SDC_MODELS_DIR, cfg.SDC_MODEL_NAME.replace('.h5', '') + '-{epoch:03d}.h5')
+        name = os.path.join(cfg.SDC_MODELS_DIR,
+                            cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-{epoch:03d}.h5')
 
     checkpoint = ModelCheckpoint(
         name,
@@ -116,11 +118,16 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper left')
-    # plt.show()
+    plt.show()
     plt.savefig('history-training.png')
 
+    if cfg.USE_PREDICTIVE_UNCERTAINTY:
+        name = os.path.join(cfg.SDC_MODELS_DIR,
+                            cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-mc-final.h5')
+    else:
+        name = os.path.join(cfg.SDC_MODELS_DIR, cfg.TRACK + '-' + cfg.SDC_MODEL_NAME.replace('.h5', '') + '-final.h5')
+
     # save the last model anyway (might not be the best)
-    name = os.path.join(cfg.SDC_MODELS_DIR, cfg.SDC_MODEL_NAME.replace('.h5', '') + '-final.h5')
     model.save(name)
 
 

@@ -16,21 +16,19 @@ if __name__ == '__main__':
 
     drive = utils.get_driving_styles(cfg)
 
-    only_center_images = [True, False]
-    use_crop = [True, False]
-    loss_func = ["VAE", "MSE"]
-
     data = load_all_images(cfg)
 
     for WHAT in ALL:
         encoder_mse = tensorflow.keras.models.load_model('sao/encoder-track1-MSEloss-' + WHAT)
         decoder_mse = tensorflow.keras.models.load_model('sao/decoder-track1-MSEloss-' + WHAT)
-        vae_mse = VAE(model_name="encoder_mse", loss="MSE", encoder=encoder_mse, decoder=decoder_mse)
+        vae_mse = VAE(model_name="encoder_mse", loss="MSE", intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
+                      latent_dim=cfg.SAO_LATENT_DIM, encoder=encoder_mse, decoder=decoder_mse)
         vae_mse.compile(optimizer=tensorflow.keras.optimizers.Adam(learning_rate=0.0001))
 
         encoder_vae = tensorflow.keras.models.load_model('sao/encoder-track1-VAEloss-' + WHAT)
         decoder_vae = tensorflow.keras.models.load_model('sao/decoder-track1-VAEloss-' + WHAT)
-        vae_vae = VAE(model_name="encoder_vae", loss="VAE", encoder=encoder_vae, decoder=decoder_vae)
+        vae_vae = VAE(model_name="encoder_vae", loss="VAE", intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
+                      latent_dim=cfg.SAO_LATENT_DIM, encoder=encoder_vae, decoder=decoder_vae)
         vae_vae.compile(optimizer=tensorflow.keras.optimizers.Adam(learning_rate=0.0001))
 
         i = 0

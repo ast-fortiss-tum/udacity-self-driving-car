@@ -32,6 +32,8 @@ MAX_LAPS = 1  # max laps before sim stops
 
 # autoencoder-based self-assessment oracle settings
 NUM_EPOCHS_SAO_MODEL = 50  # training epochs for the autoencoder-based self-assessment oracle
+SAO_LATENT_DIM = 2  # dimension of the latent space
+SAO_INTERMEDIATE_DIM = 512  # dimension of the latent space
 USE_ONLY_CENTER_IMG = False  # train the autoencoder-based self-assessment oracle only using front-facing camera images
 USE_CROP = False  # crop the images the same way as the car
 LOSS_SAO_MODEL = "VAE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle

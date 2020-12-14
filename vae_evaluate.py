@@ -6,10 +6,10 @@ from tqdm import tqdm
 
 import utils
 from config import Config
-from vae_train import setup_vae
 from utils import load_all_images
 from utils import plot_reconstruction_losses
 from vae import normalize_and_reshape, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
+from vae_train import load_vae
 
 np.random.seed(0)
 
@@ -22,7 +22,7 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
     if delete_cache:
         if os.path.exists(cache_path):
             os.remove(cache_path)
-            print("delete_cache = true. Removed losses cache file " + cached_file_name)
+            print("delete_cache=true. Removed losses cache file " + cached_file_name)
 
     try:
         losses = np.load(cache_path)
@@ -161,13 +161,13 @@ def plot_picture_orig_dec(orig, dec, picture_name, losses, num=10):
 #     plt.show()
 
 
-def load_and_eval_vae(cfg, dataset):
-    vae, name = setup_vae(cfg, load_vae_from_disk=True)
+def load_and_eval_vae(cfg, dataset, delete_cache):
+    vae, name = load_vae(cfg, load_vae_from_disk=True)
 
     # history = np.load(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", allow_pickle=True).item()
     # plot_history(history, cfg, name, vae)
 
-    losses = load_or_compute_losses(vae, dataset, name, delete_cache=False)
+    losses = load_or_compute_losses(vae, dataset, name, delete_cache)
     plot_reconstruction_losses(losses, name)
 
 
@@ -176,7 +176,7 @@ def main():
     cfg.from_pyfile("config_my.py")
 
     dataset = load_all_images(cfg)
-    load_and_eval_vae(cfg, dataset)
+    load_and_eval_vae(cfg, dataset, delete_cache=True)
 
 
 if __name__ == '__main__':
