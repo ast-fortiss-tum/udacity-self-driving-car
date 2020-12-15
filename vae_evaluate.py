@@ -2,6 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import gamma
 from tqdm import tqdm
 
 import utils
@@ -75,90 +76,21 @@ def plot_picture_orig_dec(orig, dec, picture_name, losses, num=10):
     plt.close()
 
 
-# def draw_best_worst_results(dataset, autoencoder, losses, picture_name, numb_of_picture=10):
-#     model = tensorflow.keras.models.load_model('sao/' + autoencoder.__str__())
-#
-#     extremes, extremes_loss = get_best_and_worst_by_loss(dataset, losses, numb_of_picture // 2)
-#     # extremes = model.reshape(extremes)
-#
-#     # extremes = utils.resize(extremes)
-#     extremes = normalize_and_reshape(extremes)
-#
-#     anomaly_decoded_img = model.predict(extremes)
-#     plot_picture_orig_dec(extremes, anomaly_decoded_img, picture_name, extremes_loss, numb_of_picture)
+def get_thresholds(losses):
+    print("Fitting reconstruction error distribution using Gamma distribution")
 
+    shape, loc, scale = gamma.fit(losses, floc=0)
 
-# def get_best_and_worst_by_loss(dataset, losses, n=5):
-#     loss_picture_list = []
-#     for idx, loss in enumerate(losses):
-#         picture = dataset[idx]
-#         loss_picture_list.append([loss, picture])
-#
-#     loss_picture_list = sorted(loss_picture_list, key=lambda x: x[0])
-#
-#     result = []
-#     losses = []
-#     for idx in range(0, n):
-#         result.append(loss_picture_list[idx][1])
-#         losses.append(loss_picture_list[idx][0])
-#
-#     for idx in range(len(loss_picture_list) - n, len(loss_picture_list)):
-#         result.append(loss_picture_list[idx][1])
-#         losses.append(loss_picture_list[idx][0])
-#
-#     return np.array(result), losses
+    thresholds = []
 
+    conf_intervals = [0.95]  # [0.95, 0.99, 0.999, 0.9999, 0.99999]
 
-# def compute_and_plot_all_losses(cfg, use_mse=True):
-#     current_path = os.getcwd()
-#     if use_mse:
-#         cache_path1 = os.path.join(current_path, 'cache', "VAE-track1-MSEloss-allimg-nocrop-losses.npy")
-#         cache_path2 = os.path.join(current_path, 'cache', "VAE-track1-MSEloss-allimg-usecrop-losses.npy")
-#         cache_path3 = os.path.join(current_path, 'cache', "VAE-track1-MSEloss-centerimg-nocrop-losses.npy")
-#         cache_path4 = os.path.join(current_path, 'cache', "VAE-track1-MSEloss-centerimg-usecrop-losses.npy")
-#
-#         losses1 = np.load(cache_path1).tolist()
-#         losses2 = np.load(cache_path2).tolist()
-#         losses3 = np.load(cache_path3).tolist()
-#         losses4 = np.load(cache_path4).tolist()
-#
-#         # summarize history for loss
-#         plt.figure(figsize=(20, 4))
-#         x_losses = np.arange(len(losses1))
-#         plt.plot(x_losses, losses1, color='red', alpha=0.7, label="MSEloss-allimg-nocrop")
-#         plt.plot(x_losses, losses2, color='blue', alpha=0.7, label="MSEloss-allimg-usecrop")
-#         plt.plot(x_losses, losses3, color='green', alpha=0.7, label="MSEloss-centerimg-nocrop")
-#         plt.plot(x_losses, losses4, color='black', alpha=0.7, label="MSEloss-centerimg-usecrop")
-#     else:
-#         cache_path1 = os.path.join(current_path, 'cache', "VAE-track1-VAEloss-allimg-nocrop-losses.npy")
-#         cache_path2 = os.path.join(current_path, 'cache', "VAE-track1-VAEloss-allimg-usecrop-losses.npy")
-#         cache_path3 = os.path.join(current_path, 'cache', "VAE-track1-VAEloss-centerimg-nocrop-losses.npy")
-#         cache_path4 = os.path.join(current_path, 'cache', "VAE-track1-VAEloss-centerimg-usecrop-losses.npy")
-#
-#         losses1 = np.load(cache_path1).tolist()
-#         losses2 = np.load(cache_path2).tolist()
-#         losses3 = np.load(cache_path3).tolist()
-#         losses4 = np.load(cache_path4).tolist()
-#
-#         # summarize history for loss
-#         plt.figure(figsize=(20, 4))
-#         x_losses = np.arange(len(losses1))
-#         plt.plot(x_losses, losses1, color='red', alpha=0.7, label="VAEloss-allimg-nocrop")
-#         plt.plot(x_losses, losses2, color='blue', alpha=0.7, label="VAEloss-allimg-usecrop")
-#         plt.plot(x_losses, losses3, color='green', alpha=0.7, label="VAEloss-centerimg-nocrop")
-#         plt.plot(x_losses, losses4, color='black', alpha=0.7, label="VAEloss-centerimg-usecrop")
-#
-#     plt.ylabel('Loss')
-#     plt.xlabel('Frames')
-#     plt.title("Reconstruction error for all VAE loss-based anomaly detectors")
-#     plt.legend()
-#
-#     if use_mse:
-#         plt.savefig('plots/reconstruction-plot-all-MSE.png')
-#     else:
-#         plt.savefig('plots/reconstruction-plot-all-VAE.png')
-#
-#     plt.show()
+    print("Creating thresholds using the confidence intervals: %s" % conf_intervals)
+
+    for c in conf_intervals:
+        thresholds.append(gamma.ppf(c, shape, loc=loc, scale=scale))
+
+    return thresholds
 
 
 def load_and_eval_vae(cfg, dataset, delete_cache):
@@ -168,7 +100,8 @@ def load_and_eval_vae(cfg, dataset, delete_cache):
     # plot_history(history, cfg, name, vae)
 
     losses = load_or_compute_losses(vae, dataset, name, delete_cache)
-    plot_reconstruction_losses(losses, name)
+    thresholds = get_thresholds(losses)
+    plot_reconstruction_losses(losses, name, thresholds)
 
 
 def main():
@@ -176,7 +109,7 @@ def main():
     cfg.from_pyfile("config_my.py")
 
     dataset = load_all_images(cfg)
-    load_and_eval_vae(cfg, dataset, delete_cache=True)
+    load_and_eval_vae(cfg, dataset, delete_cache=False)
 
 
 if __name__ == '__main__':

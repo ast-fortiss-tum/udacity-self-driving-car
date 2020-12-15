@@ -18,8 +18,9 @@ INPUT_SHAPE = (RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
 csv_fieldnames_improved_simulator = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
-                                     "lap", "waypoint", "loss", "uncertainty", "cte", "steering_angle", "throttle",
-                                     "speed", "brake", "crashed",
+                                     "lap", "waypoint", "loss",
+                                     "uncertainty",  # newly added
+                                     "cte", "steering_angle", "throttle", "speed", "brake", "crashed",
                                      "distance", "time", "ang_diff",  # newly added
                                      "center", "tot_OBEs", "tot_crashes"]
 
@@ -312,9 +313,19 @@ def load_all_images(cfg):
     return images
 
 
-def plot_reconstruction_losses(losses, name):
+def plot_reconstruction_losses(losses, name, thresholds):
+    plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
+    plt.show()
+
+    plt.clf()
     plt.figure(figsize=(20, 4))
     x_losses = np.arange(len(losses))
+
+    for t in thresholds:
+        x_threshold = np.arange(len(x_losses))
+        y_threshold = [t] * len(x_threshold)
+        plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
+
     plt.plot(x_losses, losses, color='blue', alpha=0.7)
 
     plt.ylabel('Loss')
@@ -323,10 +334,6 @@ def plot_reconstruction_losses(losses, name):
 
     plt.savefig('plots/reconstruction-plot-' + name + '.png')
 
-    plt.show()
-
-    plt.clf()
-    plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
     plt.show()
 
 

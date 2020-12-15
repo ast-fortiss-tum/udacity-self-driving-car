@@ -6,7 +6,6 @@ from pathlib import Path
 
 import tensorflow
 from tensorflow import keras
-from tqdm import tqdm
 
 import utils
 from config import Config
@@ -40,6 +39,9 @@ prev_image_array = None
 anomaly_detection = None
 autoenconder_model = None
 frame_id = 0
+batch_size = 4
+sampling = 15
+uncertainty = -1
 
 
 @sio.on('telemetry')
@@ -103,37 +105,27 @@ def telemetry(sid, data):
             image = np.array([image])  # the model expects 4D array
 
             global steering_angle
+            global uncertainty
+            global batch_size
+            global sampling
 
             # predict the steering angle for the image
             if cfg.USE_PREDICTIVE_UNCERTAINTY:
 
-                batch_size = 128  # batch_size used for training
-                for batch_id in tqdm(range(batch_size)):
+                # take batch of data
+                x = [image for i in range(batch_size)]
 
-                    # take batch of data
-                    x = [image for i in range(batch_size)]
+                # init empty predictions
+                y_ = np.zeros(batch_size)
 
-                    # init empty predictions
-                    y_ = np.zeros(batch_size)
+                for sample_id in range(batch_size):
+                    # save predictions from a sample pass
+                    y_[sample_id] = model.predict(x, batch_size)
 
-                    for sample_id in range(batch_size):
-                        # save predictions from a sample pass
-                        y_[sample_id] = model.predict(x, batch_size)
-
-                    # average over all passes if the final steering angle
-                    steering_angle = y_.mean(axis=0)
-                    # evaluate against labels
-                    uncertainty = y_.var(axis=0)
-
-                    steering_angles = float(model.predict(image, batch_size=128))
-                    steering_angle_1 = steering_angles.mean(axis=0)
-                    uncertainty_1 = steering_angles.var(axis=0)
-
-                    # Generate predictive samples
-                    # batch_generator = data.Dataset.from_tensor_slices(x).repeat(count=sample_size).batch(batch_size)
-                    # mc_samples = model.predict(batch_generator)
-                    # assert mc_samples.shape[0] == sample_size
-                    # assert mc_samples.shape[1] == num_classes
+                # average over all passes if the final steering angle
+                steering_angle = y_.mean(axis=0)
+                # evaluate against labels
+                uncertainty = y_.var(axis=0)
             else:
                 steering_angle = float(model.predict(image, batch_size=1))
 
@@ -158,15 +150,14 @@ def telemetry(sid, data):
 
             global frame_id
 
-            # print('steering_angle: {} - cte: {}'.format(steering_angle, cte))
-
             send_control(steering_angle, throttle, confidence, loss, cfg.MAX_LAPS)
             if cfg.TESTING_DATA_DIR:
                 csv_path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME)
                 utils.write_csv_line(csv_path,
                                      [frame_id, cfg.SDC_MODEL_NAME, cfg.ANOMALY_DETECTOR_NAME, cfg.SAO_THRESHOLD,
-                                      cfg.SIMULATION_NAME, lapNumber, wayPoint, loss, cte, steering_angle, throttle,
-                                      speed, brake, isCrash,
+                                      cfg.SIMULATION_NAME, lapNumber, wayPoint, loss,
+                                      uncertainty,  # new metrics
+                                      cte, steering_angle, throttle, speed, brake, isCrash,
                                       distance, sim_time, ang_diff,  # new metrics
                                       image_path, number_obe, number_crashes])
 
