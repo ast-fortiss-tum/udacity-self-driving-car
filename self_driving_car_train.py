@@ -92,9 +92,9 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
         save_best_only=True,
         mode='auto')
 
-    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
+    early_stop = keras.callbacks.EarlyStopping(monitor='loss',
                                                min_delta=.0005,
-                                               patience=5,
+                                               patience=10,
                                                mode='auto')
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=cfg.LEARNING_RATE))

@@ -40,8 +40,10 @@ anomaly_detection = None
 autoenconder_model = None
 frame_id = 0
 batch_size = 4
-sampling = 15
+sampling = 30
 uncertainty = -1
+speed_limit = 35
+fid = 0
 
 
 @sio.on('telemetry')
@@ -108,24 +110,32 @@ def telemetry(sid, data):
             global uncertainty
             global batch_size
             global sampling
+            global fid
 
             # predict the steering angle for the image
             if cfg.USE_PREDICTIVE_UNCERTAINTY:
 
-                # take batch of data
-                x = [image for i in range(batch_size)]
+                fid += 1
+                #print(fid)
 
-                # init empty predictions
-                y_ = np.zeros(batch_size)
+                if fid % sampling == 0:
+                    # take batch of data
+                    x = [image for i in range(batch_size)]
 
-                for sample_id in range(batch_size):
-                    # save predictions from a sample pass
-                    y_[sample_id] = model.predict(x, batch_size)
+                    # init empty predictions
+                    y_ = np.zeros(batch_size)
 
-                # average over all passes if the final steering angle
-                steering_angle = y_.mean(axis=0)
-                # evaluate against labels
-                uncertainty = y_.var(axis=0)
+                    for sample_id in range(batch_size):
+                        # save predictions from a sample pass
+                        y_[sample_id] = model.predict(x, batch_size)
+
+                    # average over all passes if the final steering angle
+                    steering_angle = y_.mean(axis=0)
+                    # evaluate against labels
+                    uncertainty = y_.var(axis=0)
+                    print(fid, uncertainty)
+                else:
+                    steering_angle = float(model.predict(image, batch_size=1))
             else:
                 steering_angle = float(model.predict(image, batch_size=1))
 
@@ -210,6 +220,8 @@ if __name__ == '__main__':
 
     anomaly_detection = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
                             loss=cfg.LOSS_SAO_MODEL,
+                            latent_dim=cfg.SAO_LATENT_DIM,
+                            intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
                             encoder=encoder,
                             decoder=decoder)
     anomaly_detection.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
