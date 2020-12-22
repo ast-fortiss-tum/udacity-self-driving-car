@@ -8,6 +8,7 @@ import types
 class Config:
 
     def __init__(self):
+        self.LEARNING_RATE = None
         self.SAO_INTERMEDIATE_DIM = None
         self.SAO_LATENT_DIM = None
         self.MAX_SPEED = None

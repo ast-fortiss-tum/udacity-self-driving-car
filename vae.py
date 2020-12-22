@@ -1,3 +1,5 @@
+from abc import ABC
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -48,7 +50,7 @@ class Decoder(layers.Layer):
 
 
 # Define the VAE as a `Model` with a custom `train_step`
-class VAE(keras.Model):
+class VAE(keras.Model, ABC):
     def __init__(self, model_name, loss, intermediate_dim, latent_dim, encoder, decoder, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.model_name = model_name
@@ -67,7 +69,7 @@ class VAE(keras.Model):
             reconstruction_loss = tf.reduce_mean(keras.losses.mean_squared_error(data, reconstruction))
             reconstruction_loss *= RESIZED_IMAGE_WIDTH * RESIZED_IMAGE_HEIGHT
 
-            if self.lossFunc[0] == "VAE":
+            if self.lossFunc == "VAE":
                 kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
                 kl_loss = tf.reduce_mean(kl_loss)
                 kl_loss *= -0.5
@@ -85,7 +87,7 @@ class VAE(keras.Model):
                 self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
                 return {
                     "loss": total_loss,
-                    "reconstruction_loss": reconstruction_loss,
+                    #"reconstruction_loss": reconstruction_loss,
                 }
 
     def call(self, inputs, **kwargs):

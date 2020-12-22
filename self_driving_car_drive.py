@@ -1,12 +1,15 @@
 import base64
 import logging
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 
+from utils import IMAGE_WIDTH, IMAGE_HEIGHT
 import tensorflow
 from tensorflow import keras
 
+import cv2
 import utils
 from config import Config
 
@@ -39,11 +42,11 @@ prev_image_array = None
 anomaly_detection = None
 autoenconder_model = None
 frame_id = 0
-batch_size = 4
-sampling = 30
+batch_size = 4  # 4 for lake track
+sampling = 15  # 15 for lake track
 uncertainty = -1
 speed_limit = 35
-fid = 0
+fid = -1
 
 
 @sio.on('telemetry')
@@ -101,9 +104,12 @@ def telemetry(sid, data):
 
             image_copy = resize(image_copy)
             image_copy = normalize_and_reshape(image_copy)
-            loss = anomaly_detection.test_on_batch(image_copy, image_copy)[1]
+            loss = anomaly_detection.test_on_batch(image_copy)[2]
 
             image = utils.preprocess(image)  # apply the pre-processing
+
+            # image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT), cv2.INTER_AREA)
+
             image = np.array([image])  # the model expects 4D array
 
             global steering_angle
@@ -116,9 +122,12 @@ def telemetry(sid, data):
             if cfg.USE_PREDICTIVE_UNCERTAINTY:
 
                 fid += 1
-                #print(fid)
+                # print(fid)
 
-                if fid % sampling == 0:
+                if fid % sampling == 0 or fid == 0:
+
+                    #pause_simulation()
+
                     # take batch of data
                     x = [image for i in range(batch_size)]
 
@@ -127,13 +136,17 @@ def telemetry(sid, data):
 
                     for sample_id in range(batch_size):
                         # save predictions from a sample pass
-                        y_[sample_id] = model.predict(x, batch_size)
+                        y_[sample_id] = model.predict(x, batch_size=batch_size)
+
+                    #resume_simulation()
 
                     # average over all passes if the final steering angle
                     steering_angle = y_.mean(axis=0)
                     # evaluate against labels
                     uncertainty = y_.var(axis=0)
                     print(fid, uncertainty)
+
+
                 else:
                     steering_angle = float(model.predict(image, batch_size=1))
             else:
@@ -184,6 +197,24 @@ def telemetry(sid, data):
 def connect(sid, environ):
     print("connect ", sid)
     send_control(0, 0, 1, 0, 1)
+
+
+def ack_pause():
+    print('pause message was received!')
+
+
+def ack_resume():
+    print('resume message was received!')
+
+
+@sio.on('pause')  # DO NOT CHANGE THIS
+def pause_simulation():
+    sio.emit("pause", callback=ack_pause())
+
+
+@sio.on('resume')  # DO NOT CHANGE THIS
+def resume_simulation():
+    sio.emit("resume", callback=ack_resume())
 
 
 def send_control(steering_angle, throttle, confidence, loss, max_laps):  # DO NOT CHANGE THIS

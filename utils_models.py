@@ -1,6 +1,6 @@
-from keras import Sequential
-from keras.layers import Lambda, Conv2D, Dropout, Flatten, Dense
 from tensorflow import keras
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Lambda, Conv2D, Dropout, Flatten, Dense
 from tensorflow.keras.regularizers import l2
 
 from utils import INPUT_SHAPE
@@ -25,7 +25,7 @@ def build_model(model_name, use_dropout=False):
 
 def create_dave2_model(use_dropout=False):
     """
-    Modified NVIDIA model
+    Modified NVIDIA model w/ Dropout layers
     """
     if use_dropout:
         inputs = keras.Input(shape=INPUT_SHAPE)

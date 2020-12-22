@@ -1,6 +1,7 @@
 import utils
 from config import Config
-from vae_train import load_data_for_vae, run_training
+from vae_train import run_training
+from utils_vae import load_data_for_vae_training
 
 if __name__ == '__main__':
     cfg = Config()
@@ -14,7 +15,7 @@ if __name__ == '__main__':
     latent_space = [2, 4, 8, 16, 32, 64, 128, 256]
     intermediate_space = [512]
 
-    x_train, x_test = load_data_for_vae(cfg)
+    x_train, x_test = load_data_for_vae_training(cfg)
 
     for only in only_center_images:
         cfg.USE_ONLY_CENTER_IMG = only

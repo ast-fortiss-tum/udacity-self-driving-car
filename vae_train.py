@@ -5,93 +5,22 @@ import time
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
-import tensorflow
-from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-from tensorflow import keras
 
 from config import Config
-from utils import RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, RESIZED_IMAGE_HEIGHT
-from utils import plot_history, get_driving_styles
-from vae import VAE, Encoder, Decoder
+from utils import plot_history
+from utils_vae import load_vae, load_data_for_vae_training
 from vae_batch_generator import Generator
 
-np.random.seed(0)
 
-
-# TODO: unify with load_data
-def load_data_for_vae(cfg):
-    """
-    Load training data and split it into training and validation set
-    """
-    drive = get_driving_styles(cfg)
-
-    print("Loading training set " + str(cfg.TRACK) + str(drive))
-
-    start = time.time()
-
-    x = None
-    path = None
-    x_train = None
-    x_test = None
-
-    for drive_style in drive:
-        try:
-            path = os.path.join(cfg.TRAINING_DATA_DIR,
-                                cfg.TRAINING_SET_DIR,
-                                cfg.TRACK,
-                                drive_style,
-                                'driving_log.csv')
-            data_df = pd.read_csv(path)
-            if x is None:
-                if cfg.USE_ONLY_CENTER_IMG:
-                    x = data_df[['center']].values
-                else:
-                    x = data_df[['center', 'left', 'right']].values
-            else:
-                if cfg.USE_ONLY_CENTER_IMG:
-                    x = np.concatenate((x, data_df[['center']].values), axis=0)
-                else:
-                    x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0)
-        except FileNotFoundError:
-            print("Unable to read file %s" % path)
-            continue
-
-    if x is None:
-        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
-        exit()
-
-    if cfg.TRACK == "track1":
-        print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
-        x = x[:cfg.TRACK1_IMG_PER_LAP]
-    else:
-        print("Incorrect cfg.TRACK option provided")
-        exit()
-
-    try:
-        x_train, x_test = train_test_split(x, test_size=cfg.TEST_SIZE, random_state=0)
-    except TypeError:
-        print("Missing header to csv files")
-        exit()
-
-    duration_train = time.time() - start
-    print("Loading training set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
-
-    print("Data set: " + str(len(x)) + " elements")
-    print("Training set: " + str(len(x_train)) + " elements")
-    print("Test set: " + str(len(x_test)) + " elements")
-    return x_train, x_test
-
-
-def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
+def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining):
     """
     Train the VAE model
     """
 
     # do not use .h5 extension when saving/loading custom objects
-    my_encoder = Path(os.path.join(cfg.SAO_MODELS_DIR, name.replace("VAE-", "encoder-")))
-    my_decoder = Path(os.path.join(cfg.SAO_MODELS_DIR, name.replace("VAE-", "decoder-")))
+    my_encoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "encoder-" + name))
+    my_decoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "decoder-" + name))
 
     if delete_model:
         print("Deleting model %s" % str(my_encoder))
@@ -102,8 +31,15 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
         print("Model %s deleted" % str(my_decoder))
 
     if my_encoder.exists() and my_decoder.exists():
-        print("Model %s already exists. Quit training." % str(name))
-        return
+        if retraining:
+            print("Model %s already exists and retraining=true. Keep training." % str(name))
+            my_encoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "encoder-" + name + "-RETRAINED"))
+            my_decoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "decoder-" + name + "-RETRAINED"))
+        else:
+            print("Model %s already exists and retraining=false. Quit training." % str(name))
+            return
+    else:
+        print("Model %s does not exist. Training." % str(name))
 
     start = time.time()
 
@@ -124,75 +60,21 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model):
     plot_history(history.history, cfg, vae)
 
     # save the last model (might not be the best)
-    encoder_name = name.replace("VAE-", "encoder-")
-    encoder_file = Path(os.path.join(cfg.SAO_MODELS_DIR, encoder_name))
-    vae.encoder.save(encoder_file.__str__(), save_format="tf")
+    vae.encoder.save(my_encoder.__str__(), save_format="tf")
 
-    decoder_name = name.replace("VAE-", "decoder-")
-    decoder_file = Path(os.path.join(cfg.SAO_MODELS_DIR, decoder_name))
-    vae.decoder.save(decoder_file.__str__(), save_format="tf")
+    vae.decoder.save(my_decoder.__str__(), save_format="tf")
 
     # save history file
     np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
-
-
-def load_vae(cfg, load_vae_from_disk):
-    if cfg.USE_ONLY_CENTER_IMG:
-        print("cfg.USE_ONLY_CENTER_IMG = "
-              + str(cfg.USE_ONLY_CENTER_IMG)
-              + ". Using only front-facing camera images")
-        use_center = '-centerimg-'
-    else:
-        print("cfg.USE_ONLY_CENTER_IMG = "
-              + str(cfg.USE_ONLY_CENTER_IMG)
-              + ". Using all camera images")
-        use_center = '-allimg-'
-
-    if cfg.USE_CROP:
-        print("cfg.USE_CROP = "
-              + str(cfg.USE_CROP)
-              + ". Cropping the image")
-        use_crop = 'usecrop'
-    else:
-        print("cfg.USE_CROP = "
-              + str(cfg.USE_CROP)
-              + ". Using the entire image")
-        use_crop = 'nocrop'
-
-    name = "VAE-" + cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss-' \
-           + "intdim" + str(cfg.SAO_INTERMEDIATE_DIM) + "-latent" + str(cfg.SAO_LATENT_DIM) \
-           + use_center + use_crop
-
-    if load_vae_from_disk:
-        encoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "encoder-"))
-        decoder = tensorflow.keras.models.load_model('sao/' + name.replace("VAE-", "decoder-"))
-    else:
-        encoder = Encoder().call(cfg.SAO_INTERMEDIATE_DIM,
-                                 cfg.SAO_LATENT_DIM,
-                                 RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS, )
-        decoder = Decoder().call(cfg.SAO_INTERMEDIATE_DIM,
-                                 cfg.SAO_LATENT_DIM,
-                                 (cfg.SAO_LATENT_DIM,), )
-
-    vae = VAE(model_name=name, loss=cfg.LOSS_SAO_MODEL, intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
-              latent_dim=cfg.SAO_LATENT_DIM, encoder=encoder, decoder=decoder)
-
-    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
-
-    return vae, name
-
-
-def run_training(cfg, x_test, x_train, delete_model):
-    vae, name = load_vae(cfg, load_vae_from_disk=False)
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model)
 
 
 def main():
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    x_train, x_test = load_data_for_vae(cfg)
-    run_training(cfg, x_test, x_train, delete_model=False)
+    x_train, x_test = load_data_for_vae_training(cfg)
+    vae, name = load_vae(cfg, load_vae_from_disk=False)
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=False)
 
 
 if __name__ == '__main__':

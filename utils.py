@@ -239,11 +239,48 @@ def plot_history(history, cfg, vae):
     plt.plot(history['val_total_loss'])
     plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
     plt.xlabel('epoch')
-    plt.title('training' + str(vae.model_name))
+    plt.title('training-' + str(vae.model_name))
     plt.legend(['train', 'val'], loc='upper left')
     plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
 
     plt.show()
+
+
+def load_improvement_set(cfg, ids):
+    start = time.time()
+
+    x = None
+    path = None
+
+    try:
+        path = os.path.join(cfg.TESTING_DATA_DIR,
+                            cfg.SIMULATION_NAME,
+                            'driving_log.csv')
+        data_df = pd.read_csv(path)
+
+        print("Filtering only false positives")
+        data_df = data_df[data_df['frameId'].isin(ids)]
+
+        if x is None:
+            x = data_df[['center']].values
+        else:
+            x = np.concatenate((x, data_df[['center']].values), axis=0)
+
+    except FileNotFoundError:
+        print("Unable to read file %s" % path)
+
+    if x is None:
+        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
+        exit()
+
+    x = x[:6]
+
+    duration_train = time.time() - start
+    print("Loading improvement data set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+
+    print("False positive data set: " + str(len(x)) + " elements")
+
+    return x
 
 
 def load_all_images(cfg):
@@ -251,6 +288,7 @@ def load_all_images(cfg):
     Load all driving images
     TODO: inefficient
     """
+    cfg.TRACK1_DRIVING_STYLES = ["normal"]
     drive = get_driving_styles(cfg)
 
     print("Loading data set " + str(cfg.TRACK) + str(drive))
@@ -313,18 +351,17 @@ def load_all_images(cfg):
     return images
 
 
-def plot_reconstruction_losses(losses, name, thresholds):
-    plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
-    plt.show()
+def plot_reconstruction_losses(losses, name, threshold):
+    # plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
+    # plt.show()
+    # plt.clf()
 
-    plt.clf()
     plt.figure(figsize=(20, 4))
     x_losses = np.arange(len(losses))
 
-    for t in thresholds:
-        x_threshold = np.arange(len(x_losses))
-        y_threshold = [t] * len(x_threshold)
-        plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
+    x_threshold = np.arange(len(x_losses))
+    y_threshold = [threshold] * len(x_threshold)
+    plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
 
     plt.plot(x_losses, losses, color='blue', alpha=0.7)
 
