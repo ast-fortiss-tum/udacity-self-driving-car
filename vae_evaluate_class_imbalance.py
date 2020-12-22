@@ -1,9 +1,12 @@
 import numpy as np
+import tensorflow
+from tensorflow import keras
 
 from config import Config
 from utils import load_all_images
 from utils import plot_reconstruction_losses, load_improvement_set
 from utils_vae import load_vae, load_data_for_vae_retraining
+from vae import VAE
 from vae_evaluate import load_or_compute_losses, get_threshold, get_scores
 from vae_train import train_vae_model
 
@@ -39,6 +42,18 @@ def main():
 
     name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=True)
+
+    encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
+    decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
+    print("loaded adapted VAE from disk")
+
+    vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
+              loss=cfg.LOSS_SAO_MODEL,
+              latent_dim=cfg.SAO_LATENT_DIM,
+              intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
+              encoder=encoder,
+              decoder=decoder)
+    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
 
     # 3. evaluate w/ old threshold
     new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)

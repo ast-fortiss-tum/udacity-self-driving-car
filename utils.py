@@ -273,8 +273,6 @@ def load_improvement_set(cfg, ids):
         print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
         exit()
 
-    # x = x[:6]
-
     duration_train = time.time() - start
     print("Loading improvement data set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
