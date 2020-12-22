@@ -33,8 +33,8 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining):
     if my_encoder.exists() and my_decoder.exists():
         if retraining:
             print("Model %s already exists and retraining=true. Keep training." % str(name))
-            my_encoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "encoder-" + name + "-RETRAINED"))
-            my_decoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "decoder-" + name + "-RETRAINED"))
+            my_encoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "encoder-" + name))
+            my_decoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "decoder-" + name))
         else:
             print("Model %s already exists and retraining=false. Quit training." % str(name))
             return

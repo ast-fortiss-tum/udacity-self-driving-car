@@ -22,8 +22,7 @@ LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
 USE_PREDICTIVE_UNCERTAINTY = True  # use MC-Dropout model
 
 # Udacity simulation settings
-ANOMALY_DETECTOR_NAME = "track1-MSEloss-latent2-centerimg-nocrop-RETRAINED"
-# ANOMALY_DETECTOR_NAME = "track1-MSEloss-latent2-centerimg-nocrop"
+ANOMALY_DETECTOR_NAME = "track1-MSEloss-latent2-centerimg-nocrop"
 SIMULATION_NAME = "gauss-journal-track1-dave2-nominal-latent2"
 TESTING_DATA_DIR = "simulations"  # Udacity simulations logs
 MAX_SPEED = 35  # car's max speed, capped at 35 mph (default)
@@ -43,3 +42,4 @@ LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-bas
 # adaptive anomaly detection settings
 UNCERTAINTY_TOLERANCE_LEVEL = 0.00328  # from Michelmore et al.
 CTE_TOLERANCE_LEVEL = 2.5  # from Stocco et al.
+IMPROVEMENT_RATIO = 10

@@ -37,9 +37,6 @@ def load_vae(cfg, load_vae_from_disk):
 
     name = cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + "-latent" + str(cfg.SAO_LATENT_DIM) + use_center + use_crop
 
-    if "RETRAINED" in cfg.ANOMALY_DETECTOR_NAME:
-        name = name + '-RETRAINED'
-
     if load_vae_from_disk:
         encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
         decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
@@ -87,6 +84,74 @@ def load_data_for_vae_training(cfg):
                                 drive_style,
                                 'driving_log.csv')
             data_df = pd.read_csv(path)
+            if x is None:
+                if cfg.USE_ONLY_CENTER_IMG:
+                    x = data_df[['center']].values
+                else:
+                    x = data_df[['center', 'left', 'right']].values
+            else:
+                if cfg.USE_ONLY_CENTER_IMG:
+                    x = np.concatenate((x, data_df[['center']].values), axis=0)
+                else:
+                    x = np.concatenate((x, data_df[['center', 'left', 'right']].values), axis=0)
+        except FileNotFoundError:
+            print("Unable to read file %s" % path)
+            continue
+
+    if x is None:
+        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
+        exit()
+
+    if cfg.TRACK == "track1":
+        print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
+        x = x[:cfg.TRACK1_IMG_PER_LAP]
+    else:
+        print("Incorrect cfg.TRACK option provided")
+        exit()
+
+    try:
+        x_train, x_test = train_test_split(x, test_size=cfg.TEST_SIZE, random_state=0)
+    except TypeError:
+        print("Missing header to csv files")
+        exit()
+
+    duration_train = time.time() - start
+    print("Loading training set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+
+    print("Data set: " + str(len(x)) + " elements")
+    print("Training set: " + str(len(x_train)) + " elements")
+    print("Test set: " + str(len(x_test)) + " elements")
+    return x_train, x_test
+
+
+# TODO: redundant with other similar functions
+def load_data_for_vae_retraining(cfg):
+    """
+    Load training data, samples them each 15th row, and split it into training and validation set
+    """
+    drive = get_driving_styles(cfg)
+
+    print("Loading training set " + str(cfg.TRACK) + str(drive))
+
+    start = time.time()
+
+    x = None
+    path = None
+    x_train = None
+    x_test = None
+
+    for drive_style in drive:
+        try:
+            path = os.path.join(cfg.TRAINING_DATA_DIR,
+                                cfg.TRAINING_SET_DIR,
+                                cfg.TRACK,
+                                drive_style,
+                                'driving_log.csv')
+            data_df = pd.read_csv(path)
+
+            print("Sampling every 15th frame")
+            data_df = data_df[data_df.index % 15 == 0]  # Selects every 15th row starting from 0
+
             if x is None:
                 if cfg.USE_ONLY_CENTER_IMG:
                     x = data_df[['center']].values
