@@ -33,8 +33,9 @@ def main():
     print("Old training data set: " + str(len(x_train)) + " elements")
     print("Improvement data set: " + str(len(improvement_set)) + " elements")
 
-    for i in range(cfg.IMPROVEMENT_RATIO):
-        temp = improvement_set[:]  # np.concatenate((x_train, improvement_set), axis=0)
+    initial_improvement_set = improvement_set
+    for i in range(cfg.IMPROVEMENT_RATIO - 1):
+        temp = initial_improvement_set[:]  # np.concatenate((x_train, improvement_set), axis=0)
         improvement_set = np.concatenate((temp, improvement_set), axis=0)
 
     x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
