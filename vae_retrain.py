@@ -14,9 +14,9 @@ def main():
     x_train, x_test = load_data_for_vae_training(cfg)
     improvement_set = load_improvement_set(cfg, lfp_unc)
 
-    # x_train = improvement_set
+    x_train = improvement_set
 
-    for i in range(50):
+    for i in range(10):
         x_train_new = np.concatenate((x_train, improvement_set), axis=0)
         x_train = x_train_new
     print("Improvement data set: " + str(len(x_train)) + " elements")

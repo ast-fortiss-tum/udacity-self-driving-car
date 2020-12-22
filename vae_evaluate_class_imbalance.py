@@ -26,16 +26,22 @@ def main():
     x_train, x_test = load_data_for_vae_retraining(cfg)
     improvement_set = load_improvement_set(cfg, lfp_unc)
 
+    print("Old training data set: " + str(len(x_train)) + " elements")
+    print("Improvement data set: " + str(len(improvement_set)) + " elements")
+
     for i in range(cfg.IMPROVEMENT_RATIO):
         x_train_new = np.concatenate((x_train, improvement_set), axis=0)
         x_train = x_train_new
-    print("Improvement data set: " + str(len(x_train)) + " elements")
+
+    print("New training data set: " + str(len(x_train)) + " elements")
+
+    cfg.BATCH_SIZE = 16
 
     name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=True)
 
     # 3. evaluate w/ old threshold
-    new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=False)
+    new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
     # threshold_nominal = get_threshold(new_losses, conf_level=0.95)
     plot_reconstruction_losses(new_losses, name, threshold_nominal)
     get_scores(cfg, new_losses)
