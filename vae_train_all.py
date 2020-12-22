@@ -1,7 +1,7 @@
 import utils
 from config import Config
-from vae_train import run_training
-from utils_vae import load_data_for_vae_training
+from utils_vae import load_data_for_vae_training, load_vae
+from vae_train import train_vae_model
 
 if __name__ == '__main__':
     cfg = Config()
@@ -27,4 +27,5 @@ if __name__ == '__main__':
                     cfg.SAO_LATENT_DIM = ld
                     for intdim in intermediate_space:
                         cfg.SAO_INTERMEDIATE_DIM = intdim
-                        run_training(cfg, x_test, x_train, delete_model=False)
+                        vae, name = load_vae(cfg, load_vae_from_disk=False)
+                        train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=False)
