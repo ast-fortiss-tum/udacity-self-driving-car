@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow
+from sklearn.model_selection import train_test_split
 from tensorflow import keras
 
 from config import Config
@@ -33,8 +34,13 @@ def main():
     print("Improvement data set: " + str(len(improvement_set)) + " elements")
 
     for i in range(cfg.IMPROVEMENT_RATIO):
-        x_train_new = np.concatenate((x_train, improvement_set), axis=0)
-        x_train = x_train_new
+        temp = improvement_set[:]  # np.concatenate((x_train, improvement_set), axis=0)
+        improvement_set = np.concatenate((temp, improvement_set), axis=0)
+
+    x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
+                                                                       random_state=0)
+    x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
+    x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
 
     print("New training data set: " + str(len(x_train)) + " elements")
 
