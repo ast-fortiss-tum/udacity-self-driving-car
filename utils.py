@@ -354,6 +354,16 @@ def plot_reconstruction_losses(losses, name, threshold):
     # plt.show()
     # plt.clf()
 
+    # new_losses = []
+    # temp = []
+    # for idx, loss in enumerate(losses):
+    #     temp.append(loss)
+    #     if idx is not 0 and idx % 15 == 0:
+    #         new_losses.append(np.mean(temp))
+    #         temp = []
+    #
+    # losses = new_losses
+
     plt.figure(figsize=(20, 4))
     x_losses = np.arange(len(losses))
 

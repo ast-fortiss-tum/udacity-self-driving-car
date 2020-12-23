@@ -48,7 +48,7 @@ def main():
     cfg.BATCH_SIZE = 16
 
     name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=True)
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True)
 
     encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
     decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)

@@ -55,7 +55,7 @@ def load_vae(cfg, load_vae_from_disk):
               intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
               encoder=encoder,
               decoder=decoder)
-    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
+    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
 
     return vae, name
 
@@ -150,7 +150,7 @@ def load_data_for_vae_retraining(cfg):
             data_df = pd.read_csv(path)
 
             print("Sampling every 15th frame")
-            data_df = data_df[data_df.index % 15 == 0]  # Selects every 15th row starting from 0
+            # data_df = data_df[data_df.index % 60 == 0]  # Selects every 15th row starting from 0
 
             if x is None:
                 if cfg.USE_ONLY_CENTER_IMG:

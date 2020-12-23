@@ -20,8 +20,8 @@ class Generator(Sequence):
         self.cfg = cfg
 
     def __getitem__(self, index):
-        start_index = index * self.cfg.BATCH_SIZE
-        end_index = start_index + self.cfg.BATCH_SIZE
+        start_index = index * self.cfg.SAO_BATCH_SIZE
+        end_index = start_index + self.cfg.SAO_BATCH_SIZE
         batch_paths = self.path_to_pictures[start_index:end_index]
 
         images = np.empty([len(batch_paths), RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS])
@@ -80,4 +80,4 @@ class Generator(Sequence):
         return images, images
 
     def __len__(self):
-        return len(self.path_to_pictures) // self.cfg.BATCH_SIZE
+        return len(self.path_to_pictures) // self.cfg.SAO_BATCH_SIZE

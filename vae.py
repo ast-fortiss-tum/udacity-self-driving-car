@@ -108,7 +108,7 @@ class VAE(keras.Model, ABC):
         else:
             total_loss = reconstruction_loss
             self.add_metric(total_loss, name='total_loss', aggregation='mean')
-            self.add_metric(reconstruction_loss, name='reconstruction_loss', aggregation='mean')
+            # self.add_metric(reconstruction_loss, name='reconstruction_loss', aggregation='mean')
             return reconstruction
 
 

@@ -87,8 +87,8 @@ def get_threshold(losses, conf_level=0.95):
     # print("Creating thresholds using the confidence intervals: %s" % conf_level)
     t = gamma.ppf(conf_level, shape, loc=loc, scale=scale)
     print('threshold: ' + str(t))
-    # return t
-    return 391.3103493443211
+    return t
+    # return 391.3103493443211
 
 
 def get_scores(cfg, losses):
