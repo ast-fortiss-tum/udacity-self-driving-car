@@ -8,6 +8,7 @@ import types
 class Config:
 
     def __init__(self):
+        self.SAO_LEARNING_RATE = None
         self.TEST_SIZE = None
         self.IMPROVEMENT_RATIO = None
         self.LEARNING_RATE = None

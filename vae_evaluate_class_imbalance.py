@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import tensorflow
 from sklearn.model_selection import train_test_split
@@ -16,6 +18,10 @@ def main():
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
+    # remove old files
+    os.remove('lfp_unc_before.npy')
+    os.remove('lfp_cte_before.npy')
+
     # 1. compute reconstruction error on nominal images
     dataset = load_all_images(cfg)
     vae, name = load_vae(cfg, load_vae_from_disk=True)
@@ -23,7 +29,7 @@ def main():
     threshold_nominal = get_threshold(losses, conf_level=0.95)
     plot_reconstruction_losses(losses, name, threshold_nominal)
     lfp_unc, lfp_cte = get_scores(cfg, losses)
-    
+
     np.save('lfp_unc_before.npy', lfp_unc)
     np.save('lfp_cte_before.npy', lfp_cte)
 
