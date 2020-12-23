@@ -2,7 +2,7 @@
 TRAINING_DATA_DIR = "datasets"  # root folder for all driving training sets
 TRAINING_SET_DIR = "dataset5"  # the driving training set to use
 SAO_MODELS_DIR = "sao"  # autoencoder-based self-assessment oracle models
-TEST_SIZE = 0.05  # split of training data used for the validation set (keep it low)
+TEST_SIZE = 0.2  # split of training data used for the validation set (keep it low)
 
 # simulations settings
 TRACK = "track1"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
