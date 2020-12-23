@@ -2,7 +2,7 @@
 TRAINING_DATA_DIR = "datasets"  # root folder for all driving training sets
 TRAINING_SET_DIR = "dataset5"  # the driving training set to use
 SAO_MODELS_DIR = "sao"  # autoencoder-based self-assessment oracle models
-TEST_SIZE = 0.05  # split of training data used for the validation set (keep it low)
+TEST_SIZE = 0.2  # split of training data used for the validation set (keep it low)
 
 # simulations settings
 TRACK = "track1"  # ["track1"|"track2"|"track3"|"track1","track2","track3"] the race track to use
@@ -31,15 +31,14 @@ SAO_THRESHOLD = 180  # the SAO threshold
 MAX_LAPS = 1  # max laps before sim stops
 
 # autoencoder-based self-assessment oracle settings
-NUM_EPOCHS_SAO_MODEL = 20  # training epochs for the autoencoder-based self-assessment oracle
-SAO_BATCH_SIZE = 16
-SAO_LEARNING_RATE = 0.0001
-SAO_LATENT_DIM = 16  # dimension of the latent space
-SAO_INTERMEDIATE_DIM = 512  # dimension of the latent space
+NUM_EPOCHS_SAO_MODEL = 100  # training epochs for the autoencoder-based self-assessment oracle
+SAO_LATENT_DIM = 2  # dimension of the latent space
 USE_ONLY_CENTER_IMG = True  # train the autoencoder-based self-assessment oracle only using front-facing camera images
 USE_CROP = False  # crop the images the same way as the car
-LOSS_SAO_MODEL = "VAE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
-# SAO_LEARNING_RATE = 1.0e-3  # amount that the weights are updated during training
+LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
+# DO NOT TOUCH THESE
+SAO_BATCH_SIZE = 128
+SAO_LEARNING_RATE = 0.0001
 
 # adaptive anomaly detection settings
 UNCERTAINTY_TOLERANCE_LEVEL = 0.00328  # from Michelmore et al.
