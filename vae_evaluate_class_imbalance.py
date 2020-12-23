@@ -35,7 +35,7 @@ def main():
 
     initial_improvement_set = improvement_set
     for i in range(cfg.IMPROVEMENT_RATIO - 1):
-        temp = initial_improvement_set[:]  # np.concatenate((x_train, improvement_set), axis=0)
+        temp = initial_improvement_set[:]
         improvement_set = np.concatenate((temp, improvement_set), axis=0)
 
     x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
@@ -45,10 +45,7 @@ def main():
 
     print("New training data set: " + str(len(x_train)) + " elements")
 
-    cfg.BATCH_SIZE = 16
-
     name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True)
 
     encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
     decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
@@ -57,10 +54,11 @@ def main():
     vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
               loss=cfg.LOSS_SAO_MODEL,
               latent_dim=cfg.SAO_LATENT_DIM,
-              intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
               encoder=encoder,
               decoder=decoder)
-    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
+    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
+
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=True)
 
     # 3. evaluate w/ old threshold
     new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
