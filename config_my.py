@@ -32,7 +32,7 @@ MAX_LAPS = 1  # max laps before sim stops
 
 # autoencoder-based self-assessment oracle settings
 NUM_EPOCHS_SAO_MODEL = 100  # training epochs for the autoencoder-based self-assessment oracle
-SAO_LATENT_DIM = 2  # dimension of the latent space
+SAO_LATENT_DIM = 16  # dimension of the latent space
 USE_ONLY_CENTER_IMG = True  # train the autoencoder-based self-assessment oracle only using front-facing camera images
 USE_CROP = False  # crop the images the same way as the car
 LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
@@ -43,4 +43,4 @@ SAO_LEARNING_RATE = 0.0001
 # adaptive anomaly detection settings
 UNCERTAINTY_TOLERANCE_LEVEL = 0.00328  # from Michelmore et al.
 CTE_TOLERANCE_LEVEL = 2.5  # from Stocco et al.
-IMPROVEMENT_RATIO = 2
+IMPROVEMENT_RATIO = 1

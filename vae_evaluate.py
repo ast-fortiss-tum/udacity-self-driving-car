@@ -46,7 +46,7 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
             # reconstructed = anomaly_detector.predict(x)
 
             # TODO: check the index
-            loss = anomaly_detector.test_on_batch(x)[2]  # total loss
+            loss = anomaly_detector.test_on_batch(x)[1]  # total loss
             losses.append(loss)
 
         np_losses = np.array(losses)

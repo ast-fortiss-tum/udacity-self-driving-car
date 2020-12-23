@@ -9,11 +9,10 @@ if __name__ == '__main__':
 
     drive = utils.get_driving_styles(cfg)
 
-    only_center_images = [True, False]
-    use_crop = [True, False]
-    loss_func = ["VAE", "MSE"]
-    latent_space = [2, 4, 8, 16, 32, 64, 128, 256]
-    intermediate_space = [512]
+    only_center_images = [True]
+    use_crop = [False]
+    loss_func = ["MSE"]
+    latent_space = [2, 16]
 
     x_train, x_test = load_data_for_vae_training(cfg)
 
@@ -25,7 +24,5 @@ if __name__ == '__main__':
                 cfg.LOSS_SAO_MODEL = loss
                 for ld in latent_space:
                     cfg.SAO_LATENT_DIM = ld
-                    for intdim in intermediate_space:
-                        cfg.SAO_INTERMEDIATE_DIM = intdim
-                        vae, name = load_vae(cfg, load_vae_from_disk=False)
-                        train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=False)
+                    vae, name = load_vae(cfg, load_vae_from_disk=False)
+                    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=False)

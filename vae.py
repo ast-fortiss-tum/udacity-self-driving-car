@@ -87,7 +87,7 @@ class VAE(keras.Model, ABC):
                 self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
                 return {
                     "loss": total_loss,
-                    # "reconstruction_loss": reconstruction_loss,
+                    "reconstruction_loss": reconstruction_loss,
                 }
 
     def call(self, inputs, **kwargs):
@@ -108,7 +108,7 @@ class VAE(keras.Model, ABC):
         else:
             total_loss = reconstruction_loss
             self.add_metric(total_loss, name='total_loss', aggregation='mean')
-            # self.add_metric(reconstruction_loss, name='reconstruction_loss', aggregation='mean')
+            self.add_metric(reconstruction_loss, name='reconstruction_loss', aggregation='mean')
             return reconstruction
 
 

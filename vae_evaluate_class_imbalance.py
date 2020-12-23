@@ -23,6 +23,7 @@ def main():
     threshold_nominal = get_threshold(losses, conf_level=0.95)
     plot_reconstruction_losses(losses, name, threshold_nominal)
     lfp_unc, lfp_cte = get_scores(cfg, losses)
+    
     np.save('lfp_unc_before.npy', lfp_unc)
     np.save('lfp_cte_before.npy', lfp_cte)
 
