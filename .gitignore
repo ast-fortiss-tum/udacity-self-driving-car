@@ -11,3 +11,5 @@ history*.png
 driving_metrics_values.csv
 self-driving-car*.h5
 plots
+lfp_cte_before.npy
+lfp_unc_before.npy

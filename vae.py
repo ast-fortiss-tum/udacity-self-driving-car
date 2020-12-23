@@ -22,9 +22,9 @@ class Sampling(layers.Layer):
 
 class Encoder(layers.Layer):
 
-    def call(self, intermediate_dim, latent_dim, inputs, **kwargs):
+    def call(self, latent_dim, inputs, **kwargs):
         inputs = keras.Input(shape=(original_dim,))
-        x = Dense(intermediate_dim, activation='relu')(inputs)
+        x = Dense(512, activation='relu')(inputs)
         z_mean = layers.Dense(latent_dim, name="z_mean")(x)
         z_log_var = layers.Dense(latent_dim, name="z_log_var")(x)
         z = Sampling()([z_mean, z_log_var])
@@ -36,9 +36,9 @@ class Encoder(layers.Layer):
 
 class Decoder(layers.Layer):
 
-    def call(self, intermediate_dim, latent_dim, latent_inputs, **kwargs):
+    def call(self, latent_dim, latent_inputs, **kwargs):
         latent_inputs = keras.Input(shape=(latent_dim,), name='z_sampling')
-        x = Dense(intermediate_dim,
+        x = Dense(512,
                   activation='relu',
                   kernel_regularizer=tf.keras.regularizers.l1(0.001))(latent_inputs)
         decoder_outputs = Dense(original_dim, activation='sigmoid')(x)
@@ -51,10 +51,10 @@ class Decoder(layers.Layer):
 
 # Define the VAE as a `Model` with a custom `train_step`
 class VAE(keras.Model, ABC):
-    def __init__(self, model_name, loss, intermediate_dim, latent_dim, encoder, decoder, **kwargs):
+    def __init__(self, model_name, loss, latent_dim, encoder, decoder, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.model_name = model_name
-        self.intermediate_dim = intermediate_dim
+        self.intermediate_dim = 512
         self.latent_dim = latent_dim
         self.lossFunc = loss
         self.encoder = encoder
@@ -87,7 +87,7 @@ class VAE(keras.Model, ABC):
                 self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
                 return {
                     "loss": total_loss,
-                    #"reconstruction_loss": reconstruction_loss,
+                    # "reconstruction_loss": reconstruction_loss,
                 }
 
     def call(self, inputs, **kwargs):

@@ -42,17 +42,13 @@ def load_vae(cfg, load_vae_from_disk):
         decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
         print("loaded VAE from disk")
     else:
-        encoder = Encoder().call(cfg.SAO_INTERMEDIATE_DIM, cfg.SAO_LATENT_DIM,
-                                 RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
-        decoder = Decoder().call(cfg.SAO_INTERMEDIATE_DIM,
-                                 cfg.SAO_LATENT_DIM,
-                                 (cfg.SAO_LATENT_DIM,), )
+        encoder = Encoder().call(cfg.SAO_LATENT_DIM, RESIZED_IMAGE_HEIGHT * RESIZED_IMAGE_WIDTH * IMAGE_CHANNELS)
+        decoder = Decoder().call(cfg.SAO_LATENT_DIM, (cfg.SAO_LATENT_DIM,), )
         print("created new VAE model from disk")
 
     vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
               loss=cfg.LOSS_SAO_MODEL,
               latent_dim=cfg.SAO_LATENT_DIM,
-              intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
               encoder=encoder,
               decoder=decoder)
     vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))

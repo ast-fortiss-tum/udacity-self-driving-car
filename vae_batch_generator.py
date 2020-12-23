@@ -31,39 +31,35 @@ class Generator(Sequence):
                 center = batch_paths[i][0]  # select the center image from the batch
                 # image = load_image(self.cfg.TRAINING_SET_DIR, center)
                 try:
-                    image = mpimg.imread(center)
-                except FileNotFoundError:
                     image = mpimg.imread(self.cfg.TRAINING_DATA_DIR + "/" + self.cfg.TRAINING_SET_DIR + center)
+                except FileNotFoundError:
+                    image = mpimg.imread(center)
             else:
                 center, left, right = batch_paths[i]
 
                 choices = [0, 1, 2]  # 0=center, 1=left, 2=right
                 choice = random.choice(choices)
                 if choice == 0:
-                    # image = load_image(self.cfg.TRAINING_SET_DIR, center)
                     try:
-                        image = mpimg.imread(center)
-                    except FileNotFoundError:
                         image = mpimg.imread(self.cfg.TRAINING_DATA_DIR + "/" + self.cfg.TRAINING_SET_DIR + center)
+                    except FileNotFoundError:
+                        image = mpimg.imread(center)
                 elif choice == 1:
-                    # image = load_image(self.cfg.TRAINING_SET_DIR, left)
                     try:
-                        image = mpimg.imread(center)
-                    except FileNotFoundError:
                         image = mpimg.imread(self.cfg.TRAINING_DATA_DIR + "/" + self.cfg.TRAINING_SET_DIR + left)
-                elif choice == 2:
-                    # image = load_image(self.cfg.TRAINING_SET_DIR, right)
-                    try:
-                        image = mpimg.imread(center)
                     except FileNotFoundError:
+                        image = mpimg.imread(left)
+                elif choice == 2:
+                    try:
                         image = mpimg.imread(self.cfg.TRAINING_DATA_DIR + "/" + self.cfg.TRAINING_SET_DIR + right)
+                    except FileNotFoundError:
+                        image = mpimg.imread(right)
                 else:
                     print('wrong image index in vae_batch_generator. Using default\'s 0 (center)')
-                    # image = load_image(self.cfg.TRAINING_SET_DIR, center)
                     try:
-                        image = mpimg.imread(center)
-                    except FileNotFoundError:
                         image = mpimg.imread(self.cfg.TRAINING_DATA_DIR + "/" + self.cfg.TRAINING_SET_DIR + center)
+                    except FileNotFoundError:
+                        image = mpimg.imread(center)
 
             if self.cfg.USE_CROP:
                 image = crop(image)
