@@ -19,8 +19,10 @@ def main():
     cfg.from_pyfile("config_my.py")
 
     # remove old files
-    os.remove('lfp_unc_before.npy')
-    os.remove('lfp_cte_before.npy')
+    if os.path.exists('lfp_unc_before.npy'):
+        os.remove('lfp_unc_before.npy')
+    if os.path.exists('lfp_cte_before.np'):
+        os.remove('lfp_cte_before.npy')
 
     # 1. compute reconstruction error on nominal images
     dataset = load_all_images(cfg)
@@ -32,6 +34,8 @@ def main():
 
     np.save('lfp_unc_before.npy', lfp_unc)
     np.save('lfp_cte_before.npy', lfp_cte)
+
+    exit()
 
     # 2. compute improvement set and retrain
     x_train, x_test = load_data_for_vae_retraining(cfg)
@@ -53,6 +57,7 @@ def main():
     print("New training data set: " + str(len(x_train)) + " elements")
 
     name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=True)
 
     encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
     decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
@@ -64,8 +69,6 @@ def main():
               encoder=encoder,
               decoder=decoder)
     vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
-
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=True)
 
     # 3. evaluate w/ old threshold
     new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)

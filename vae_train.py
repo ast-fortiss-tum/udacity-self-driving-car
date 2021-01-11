@@ -52,7 +52,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining):
                       validation_data=val_generator,
                       shuffle=True,
                       epochs=cfg.NUM_EPOCHS_SAO_MODEL,
-                      verbose=1)
+                      verbose=2)
 
     duration_train = time.time() - start
     print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
@@ -74,7 +74,7 @@ def main():
 
     x_train, x_test = load_data_for_vae_training(cfg)
     vae, name = load_vae(cfg, load_vae_from_disk=False)
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=False)
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=False)
 
 
 if __name__ == '__main__':

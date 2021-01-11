@@ -16,7 +16,8 @@ class Sampling(layers.Layer):
         z_mean, z_log_var = inputs
         batch = tf.shape(z_mean)[0]
         dim = tf.shape(z_mean)[1]
-        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+        # TODO: try mean=0.0, stddev=0.5
+        epsilon = tf.keras.backend.random_normal(shape=(batch, dim), mean=0.0, stddev=1.0)
         return z_mean + tf.exp(0.5 * z_log_var) * epsilon
 
 
@@ -29,7 +30,7 @@ class Encoder(layers.Layer):
         z_log_var = layers.Dense(latent_dim, name="z_log_var")(x)
         z = Sampling()([z_mean, z_log_var])
         encoder = keras.Model(inputs=inputs, outputs=[z_mean, z_log_var, z], name="encoder")
-        encoder.summary()
+        # encoder.summary()
 
         return encoder
 
@@ -44,7 +45,7 @@ class Decoder(layers.Layer):
         decoder_outputs = Dense(original_dim, activation='sigmoid')(x)
 
         decoder = keras.Model(inputs=latent_inputs, outputs=decoder_outputs, name="decoder")
-        decoder.summary()
+        # decoder.summary()
 
         return decoder
 
