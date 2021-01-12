@@ -14,8 +14,19 @@ if __name__ == '__main__':
                         'driving_log.csv')
     data_df = pd.read_csv(path)
 
+    # read CTE values
     cte_values = data_df["cte"]
-    cte_values = np.convolve(cte_values, np.ones(15), 'valid') / 15
+
+    # apply time-series analysis over 1s
+    new_losses = []
+    temp = []
+    for idx, loss in enumerate(cte_values):
+        temp.append(loss)
+        if idx is not 0 and idx % cfg.FPS == 0:
+            new_losses.append(np.mean(temp))
+            temp = []
+
+    cte_values = new_losses
 
     x_losses = np.arange(len(cte_values))
 
