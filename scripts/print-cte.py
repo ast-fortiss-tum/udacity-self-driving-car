@@ -22,6 +22,7 @@ if __name__ == '__main__':
     # read CTE values
     crashes = data_df[data_df["crashed"] == 1]
     is_crash = (crashes.crashed - 1) + cfg.CTE_TOLERANCE_LEVEL
+    is_crash_2 = (crashes.crashed - 1) - cfg.CTE_TOLERANCE_LEVEL
 
     x_losses = np.arange(len(cte_values))
 
@@ -47,7 +48,8 @@ if __name__ == '__main__':
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
     plt.plot(x_threshold, y_threshold_2, color='red', alpha=0.2)
     plt.plot(x_losses, cte_values, color=plt.jet(), alpha=0.7, label="cte")
-    plt.plot(is_crash, 'bo', markersize=2)
+    plt.plot(is_crash, 'x:r', markersize=4)
+    plt.plot(is_crash_2, 'x:r', markersize=4)
 
     plt.legend()
     plt.ylabel('CTE')

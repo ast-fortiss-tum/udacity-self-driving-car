@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # visualize crashes
     crashes = data_df[data_df["crashed"] == 1]
     is_crash = (crashes.crashed - 1) + cfg.UNCERTAINTY_TOLERANCE_LEVEL
-    plt.plot(is_crash, 'bo', markersize=2)
+    plt.plot(is_crash, 'x:r', markersize=4)
 
     plt.legend()
 
