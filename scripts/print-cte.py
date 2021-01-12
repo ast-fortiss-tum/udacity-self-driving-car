@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
     interval = np.arange(10, 101, step=10)
 
-    plt.figure(figsize=(20, 6))
+    plt.figure(figsize=(30, 8))
 
     path = os.path.join(cfg.TESTING_DATA_DIR,
                         cfg.SIMULATION_NAME,
@@ -18,24 +18,16 @@ if __name__ == '__main__':
     cte_values = data_df["cte"]
 
     # apply time-series analysis over 1s
-    new_losses = []
-    temp = []
-    for idx, loss in enumerate(cte_values):
-        temp.append(loss)
-        if idx is not 0 and idx % cfg.FPS == 0:
-            new_losses.append(np.mean(temp))
-            temp = []
 
-    cte_values = new_losses
+    # read CTE values
+    crashes = data_df[data_df["crashed"] == 1]
+    is_crash = (crashes.crashed - 1) + cfg.CTE_TOLERANCE_LEVEL
 
     x_losses = np.arange(len(cte_values))
 
     x_threshold = np.arange(len(cte_values))
     y_threshold = [cfg.CTE_TOLERANCE_LEVEL] * len(x_threshold)
     y_threshold_2 = [-cfg.CTE_TOLERANCE_LEVEL] * len(x_threshold)
-
-    crashes = data_df[data_df["crashed"] == 1]
-    is_crash = (crashes.crashed - 1) + cfg.CTE_TOLERANCE_LEVEL
 
     # count how many mis-behaviours
     a = pd.Series(cte_values)
@@ -46,6 +38,11 @@ if __name__ == '__main__':
     times_below = (exc.shift().le(exc) & exc).sum()
 
     times = times_above + times_below
+
+    # changes the frequency of the ticks on the X-axis to simulation's seconds
+    plt.xticks(
+        np.arange(0, len(cte_values) + 1, cfg.FPS),
+        labels=range(0, len(cte_values) // cfg.FPS + 1))
 
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
     plt.plot(x_threshold, y_threshold_2, color='red', alpha=0.2)
