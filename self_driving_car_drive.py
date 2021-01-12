@@ -252,7 +252,6 @@ if __name__ == '__main__':
     anomaly_detection = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
                             loss=cfg.LOSS_SAO_MODEL,
                             latent_dim=cfg.SAO_LATENT_DIM,
-                            intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
                             encoder=encoder,
                             decoder=decoder)
     anomaly_detection.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
