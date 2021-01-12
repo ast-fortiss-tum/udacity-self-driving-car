@@ -42,8 +42,8 @@ if __name__ == '__main__':
     exc = a.ge(cfg.CTE_TOLERANCE_LEVEL)
     times_above = (exc.shift().ne(exc) & exc).sum()
 
-    exc = a.ge(-cfg.CTE_TOLERANCE_LEVEL)
-    times_below = (exc.shift().gt(exc) & exc).sum()
+    exc = a.le(-cfg.CTE_TOLERANCE_LEVEL)
+    times_below = (exc.shift().le(exc) & exc).sum()
 
     times = times_above + times_below
 
