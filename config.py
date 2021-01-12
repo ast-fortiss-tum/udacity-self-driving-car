@@ -8,6 +8,8 @@ import types
 class Config:
 
     def __init__(self):
+        self.FPS = None
+        self.UNCERTAINTY_TOLERANCE_LEVEL = None
         self.SAO_LEARNING_RATE = None
         self.TEST_SIZE = None
         self.IMPROVEMENT_RATIO = None
