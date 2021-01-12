@@ -23,31 +23,20 @@ if __name__ == '__main__':
     data_df = pd.read_csv(path)
     all_err = data_df['loss']
 
-    # encoder = tensorflow.keras.models.load_model('sao/encoder-' + cfg.ANOMALY_DETECTOR_NAME)
-    # decoder = tensorflow.keras.models.load_model('sao/decoder-' + cfg.ANOMALY_DETECTOR_NAME)
-    #
-    # vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
-    #           loss=cfg.LOSS_SAO_MODEL,
-    #           latent_dim=cfg.SAO_LATENT_DIM, encoder=encoder, decoder=decoder)
-    # vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
+    WINDOW = 15
+    ALPHA = 0.2
+    sma = all_err.rolling(WINDOW, min_periods=1).mean()
+    ewm = all_err.ewm(min_periods=1, alpha=ALPHA).mean()
 
-    # for img in tqdm(all_imgs):
-    #     img = mpimg.imread(img)
-    #     img = utils.resize(img)
-    #     img = normalize_and_reshape(img)
-    #
-    #     rec_err = vae.test_on_batch(img)[1]
-    #     all_err.append(rec_err)
-
-    # threshold = 320  # from nominal
     shape, loc, scale = gamma.fit(all_err, floc=0)
-    threshold = gamma.ppf(0.95, shape, loc=loc, scale=scale)
+    threshold = gamma.ppf(0.68, shape, loc=loc, scale=scale)
     print(threshold)
 
     # count how many mis-behaviours
-    a = pd.Series(all_err)
+    a = pd.Series(ewm)
     exc = a.ge(threshold)
     times = (exc.shift().ne(exc) & exc).sum()
+    times = times
 
     x_losses = np.arange(len(all_err))
     x_threshold = np.arange(len(all_err))
@@ -60,11 +49,16 @@ if __name__ == '__main__':
 
     # visualize crashes
     crashes = data_df[data_df["crashed"] == 1]
-    is_crash = (crashes.crashed - 1) + cfg.UNCERTAINTY_TOLERANCE_LEVEL
+    is_crash = (crashes.crashed - 1) + threshold
     plt.plot(is_crash, 'x:r', markersize=4)
 
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
-    plt.plot(x_losses, all_err, color="blue", alpha=0.7, label=cfg.ANOMALY_DETECTOR_NAME)
+    plt.plot(x_losses, all_err, '--', color="black", alpha=0.4,
+             label=cfg.ANOMALY_DETECTOR_NAME + ' (original)')
+    plt.plot(x_losses, sma, '-.', color="blue", alpha=0.4,
+             label=cfg.ANOMALY_DETECTOR_NAME + ' (sma-w' + str(WINDOW) + ')')
+    plt.plot(x_losses, ewm, color="green", alpha=0.8,
+             label=cfg.ANOMALY_DETECTOR_NAME + ' (ewm-a' + str(ALPHA) + ')')
 
     plt.legend()
     plt.ylabel('Rec Err')

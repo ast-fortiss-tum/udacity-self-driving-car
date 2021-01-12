@@ -1,4 +1,5 @@
 from matplotlib.pyplot import xticks
+from scipy.stats import gamma
 
 from config import Config
 from utils import *
@@ -17,27 +18,22 @@ if __name__ == '__main__':
     # read uncertainty values
     uncertainties = data_df["uncertainty"]
 
-    # apply time-series analysis over 1s
-    # new_losses = []
-    # temp = []
-    # for idx, loss in enumerate(uncertainties):
-    #     temp.append(loss)
-    #     if idx is not 0 and idx % cfg.FPS == 0:
-    #         new_losses.append(np.mean(temp))
-    #         temp = []
-    #
-    # uncertainties = new_losses
+    WINDOW = 15
+    ALPHA = 0.3
+    sma = uncertainties.rolling(WINDOW, min_periods=1).mean()
+    ewm = uncertainties.ewm(min_periods=1, alpha=ALPHA).mean()
 
-    # also these two works, but do interpolate as well
-    # uncertainties_ewm = data_df["uncertainty"].ewm(span=15).mean()
-    uncertainties = data_df["uncertainty"].rolling(15).mean()
+    shape, loc, scale = gamma.fit(uncertainties, floc=0)
+    threshold = gamma.ppf(0.68, shape, loc=loc, scale=scale)
+    print(threshold)
+    cfg.UNCERTAINTY_TOLERANCE_LEVEL = threshold
 
     x_losses = np.arange((len(uncertainties)))
     x_threshold = np.arange(len(uncertainties))
     y_threshold = [cfg.UNCERTAINTY_TOLERANCE_LEVEL] * len(x_threshold)
 
     # count how many mis-behaviours
-    a = pd.Series(uncertainties)
+    a = pd.Series(ewm)
     exc = a.ge(cfg.UNCERTAINTY_TOLERANCE_LEVEL)
     times = (exc.shift().ne(exc) & exc).sum()
 
@@ -47,7 +43,11 @@ if __name__ == '__main__':
         labels=range(0, len(uncertainties) // cfg.FPS + 1))
 
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
-    plt.plot(x_losses, uncertainties, color=plt.jet(), alpha=0.7, label="predictive uncertainty")
+    plt.plot(x_losses, uncertainties, '--', color='black', alpha=0.4, label="original")
+    plt.plot(x_losses, sma,  '-.', color="blue", alpha=0.2,
+             label='pred unc' + ' (sma-w' + str(WINDOW) + ')')
+    plt.plot(x_losses, ewm, color="green", alpha=0.8,
+             label='pred unc' + ' (ewm-a' + str(ALPHA) + ')')
 
     # visualize crashes
     crashes = data_df[data_df["crashed"] == 1]
