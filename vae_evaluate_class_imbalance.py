@@ -35,7 +35,7 @@ def main():
     np.save('lfp_unc_before.npy', lfp_unc)
     np.save('lfp_cte_before.npy', lfp_cte)
 
-    exit()
+    # exit()
 
     # 2. compute improvement set and retrain
     x_train, x_test = load_data_for_vae_retraining(cfg)
