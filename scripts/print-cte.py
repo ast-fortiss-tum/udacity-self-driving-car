@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
     interval = np.arange(10, 101, step=10)
 
-    plt.figure(figsize=(20, 4))
+    plt.figure(figsize=(20, 6))
 
     path = os.path.join(cfg.TESTING_DATA_DIR,
                         cfg.SIMULATION_NAME,
@@ -40,7 +40,12 @@ if __name__ == '__main__':
     # count how many mis-behaviours
     a = pd.Series(cte_values)
     exc = a.ge(cfg.CTE_TOLERANCE_LEVEL)
-    times = (exc.shift().ne(exc) & exc).sum()
+    times_above = (exc.shift().ne(exc) & exc).sum()
+
+    exc = a.ge(-cfg.CTE_TOLERANCE_LEVEL)
+    times_below = (exc.shift().gt(exc) & exc).sum()
+
+    times = times_above + times_below
 
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
     plt.plot(x_threshold, y_threshold_2, color='red', alpha=0.2)
@@ -50,8 +55,10 @@ if __name__ == '__main__':
     plt.legend()
     plt.ylabel('CTE')
     plt.xlabel('Frames')
-    plt.title("CTE values for " + cfg.SIMULATION_NAME +
-              ". # misbehaviour: %d" % times, fontsize=20)
+    plt.title("CTE values for "
+              + cfg.SIMULATION_NAME +
+              "\n# misbehaviour: %d (%d right, %d left)" % (times, times_above, times_below),
+              fontsize=20)
 
     # plt.savefig('plots/reconstruction-plot-' + name + '.png')
 

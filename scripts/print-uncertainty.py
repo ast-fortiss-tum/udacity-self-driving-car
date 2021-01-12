@@ -55,7 +55,7 @@ if __name__ == '__main__':
     # plt.xticks(uncertainties, new_x_values)
     plt.title("Uncertainty values for "
               + cfg.SIMULATION_NAME +
-              ". # misbehaviour: %d" % times, fontsize=20)
+              "\n# misbehaviour: %d" % times, fontsize=20)
 
     # plt.savefig('plots/reconstruction-plot-' + name + '.png')
 
