@@ -37,6 +37,11 @@ if __name__ == '__main__':
     crashes = data_df[data_df["crashed"] == 1]
     is_crash = (crashes.crashed - 1) + cfg.CTE_TOLERANCE_LEVEL
 
+    # count how many mis-behaviours
+    a = pd.Series(cte_values)
+    exc = a.ge(cfg.CTE_TOLERANCE_LEVEL)
+    times = (exc.shift().ne(exc) & exc).sum()
+
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
     plt.plot(x_threshold, y_threshold_2, color='red', alpha=0.2)
     plt.plot(x_losses, cte_values, color=plt.jet(), alpha=0.7, label="cte")
@@ -45,7 +50,8 @@ if __name__ == '__main__':
     plt.legend()
     plt.ylabel('CTE')
     plt.xlabel('Frames')
-    plt.title("CTE values for " + cfg.SIMULATION_NAME)
+    plt.title("CTE values for " + cfg.SIMULATION_NAME +
+              ". # misbehaviour: %d" % times, fontsize=20)
 
     # plt.savefig('plots/reconstruction-plot-' + name + '.png')
 
