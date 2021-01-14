@@ -1,15 +1,12 @@
 import base64
 import logging
 import os
-import time
 from datetime import datetime
 from pathlib import Path
 
-from utils import IMAGE_WIDTH, IMAGE_HEIGHT
 import tensorflow
 from tensorflow import keras
 
-import cv2
 import utils
 from config import Config
 
@@ -126,7 +123,7 @@ def telemetry(sid, data):
 
                 if fid % sampling == 0 or fid == 0:
 
-                    #pause_simulation()
+                    # pause_simulation()
 
                     # take batch of data
                     x = [image for i in range(batch_size)]
@@ -138,7 +135,7 @@ def telemetry(sid, data):
                         # save predictions from a sample pass
                         y_[sample_id] = model.predict(x, batch_size=batch_size)
 
-                    #resume_simulation()
+                    # resume_simulation()
 
                     # average over all passes if the final steering angle
                     steering_angle = y_.mean(axis=0)

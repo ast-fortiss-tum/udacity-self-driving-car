@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # load the online uncertainty from csv
     path = os.path.join(cfg.TESTING_DATA_DIR,
-                        'gauss-journal-track1-dave2-nominal-latent2',
+                        cfg.SIMULATION_NAME,
                         'driving_log.csv')
     data_df = pd.read_csv(path)
     online_uncertainty = data_df["uncertainty"]
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     min_idx = -1
     max_idx = -1
 
-    batch_size = 4
+    batch_size = 128
 
     for i, x in enumerate(data):
         image = mpimg.imread(x)
@@ -91,6 +91,7 @@ if __name__ == '__main__':
     plt.xlabel('Frames')
     plt.title("offline vs online (within Udacity's) uncertainty values")
     plt.legend()
+    plt.savefig("plots/online-vs-offline-uncertainty.png")
     plt.show()
 
     print(stats.mannwhitneyu(online_uncertainty, offline_uncertainty))
@@ -101,7 +102,7 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(data[min_idx]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("min diff (uncertainty=%s, predicted=%s)" % (round(offline_uncertainty[min_idx], 8),
+    plt.title("min diff (offline=%s, online=%s)" % (round(offline_uncertainty[min_idx], 8),
                                                            round(online_uncertainty[min_idx], 8)),
               fontsize=50)
 
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(data[max_idx]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("max diff (uncertainty=%s, predicted=%s)" % (round(offline_uncertainty[max_idx], 8),
+    plt.title("max diff (offline=%s, online=%s)" % (round(offline_uncertainty[max_idx], 8),
                                                            round(online_uncertainty[max_idx], 8)),
               fontsize=50)
 

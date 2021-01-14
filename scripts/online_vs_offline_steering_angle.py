@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # load the online uncertainty from csv
     path = os.path.join(cfg.TESTING_DATA_DIR,
-                        'gauss-journal-track1-dave2-nominal-latent2',
+                        cfg.SIMULATION_NAME,
                         'driving_log.csv')
     data_df = pd.read_csv(path)
     online_steering_angles = data_df["steering_angle"]
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         start = time.time()
         y = float(dave2.predict(image, batch_size=1))
         duration = round(time.time() - start, 4)
-        print("Prediction completed in %s." % str(duration))
+        # print("Prediction completed in %s." % str(duration))
         total_time += duration
 
         error = abs(online_steering_angles[i] - y)
@@ -76,7 +76,10 @@ if __name__ == '__main__':
     plt.xlabel('Frames')
     plt.title("offline vs online (within Udacity's) steering_angle values")
     plt.legend()
+    plt.savefig("plots/online-vs-offline-steering-angle.png")
     plt.show()
+
+
 
     print(stats.mannwhitneyu(online_steering_angles, offline_steering_angles))
 
@@ -88,7 +91,7 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(data[min_idx]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("min diff (steering angle=%s, predicted=%s" % (round(offline_steering_angles[min_idx], 4),
+    plt.title("min diff (offline=%s, online=%s)" % (round(offline_steering_angles[min_idx], 4),
                                                              round(online_steering_angles[min_idx], 4)),
               fontsize=60)
 
@@ -97,7 +100,7 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(data[max_idx]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("max diff (steering angle=%s, predicted=%s" % (round(offline_steering_angles[max_idx], 4),
+    plt.title("max diff (offline=%s, online=%s)" % (round(offline_steering_angles[max_idx], 4),
                                                              round(online_steering_angles[max_idx], 4)),
               fontsize=60)
 

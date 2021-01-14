@@ -201,7 +201,7 @@ def create_output_dir(cfg, fieldnames):
     csv_path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME)
 
     if os.path.exists(path):
-        print("Deleting image folder at {}".format(path))
+        print("Deleting folder at {}".format(csv_path))
         shutil.rmtree(csv_path)
 
     print("Creating image folder at {}".format(path))
@@ -213,8 +213,8 @@ def load_driving_data(cfg: object) -> object:
     path = None
     data_df = None
     try:
-        path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, 'driving_log.csv')
-        data_df = pd.read_csv(path, keep_default_na=False)
+        data_df = pd.read_csv(os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, 'driving_log.csv'),
+                              keep_default_na=False)
     except FileNotFoundError:
         print("Unable to read file %s" % path)
         exit()
@@ -349,30 +349,23 @@ def load_all_images(cfg):
     return images
 
 
-def plot_reconstruction_losses(losses, name, threshold):
-    # plt.hist(losses, bins=len(losses) // 5)  # TODO: find an appropriate constant
-    # plt.show()
-    # plt.clf()
-
-    # new_losses = []
-    # temp = []
-    # for idx, loss in enumerate(losses):
-    #     temp.append(loss)
-    #     if idx is not 0 and idx % 15 == 0:
-    #         new_losses.append(np.mean(temp))
-    #         temp = []
-    #
-    # losses = new_losses
+def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshold):
 
     plt.figure(figsize=(20, 4))
     x_losses = np.arange(len(losses))
 
     x_threshold = np.arange(len(x_losses))
     y_threshold = [threshold] * len(x_threshold)
-    plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
+    plt.plot(x_threshold, y_threshold, '--', color='black', alpha=0.4, label='new threshold')
 
-    plt.plot(x_losses, losses, color='blue', alpha=0.7)
+    if new_threshold is not None:
+        plt.plot(x_threshold, [new_threshold] * len(x_threshold), color='red', alpha=0.4, label='old threshold')
 
+    plt.plot(x_losses, losses, '-.', color='blue', alpha=0.7, label='original')
+    if new_losses is not None:
+        plt.plot(x_losses, new_losses, color='green', alpha=0.7, label='retrained')
+
+    plt.legend()
     plt.ylabel('Loss')
     plt.xlabel('Number of Instances')
     plt.title("Reconstruction error for " + name)

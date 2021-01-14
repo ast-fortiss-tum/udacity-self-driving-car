@@ -22,7 +22,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining):
     my_encoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "encoder-" + name))
     my_decoder = Path(os.path.join(cfg.SAO_MODELS_DIR, "decoder-" + name))
 
-    if delete_model:
+    if delete_model or "RETRAINED" in name:
         print("Deleting model %s" % str(my_encoder))
         shutil.rmtree(my_encoder, ignore_errors=True)
         print("Model %s deleted" % str(my_encoder))

@@ -64,6 +64,6 @@ if __name__ == '__main__':
               + cfg.SIMULATION_NAME +
               "\n# misbehaviour: %d" % times, fontsize=20)
 
-    # plt.savefig('plots/reconstruction-plot-' + name + '.png')
+    plt.savefig('plots/uncertainty.png')
 
     plt.show()

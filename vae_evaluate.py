@@ -91,7 +91,7 @@ def get_threshold(losses, conf_level=0.95):
     # return 391.3103493443211
 
 
-def get_scores(cfg, losses):
+def get_scores(cfg, losses, threshold):
     # TODO: apply time-series analysis
 
     # only occurring when conditions == unexpected
@@ -113,7 +113,10 @@ def get_scores(cfg, losses):
     likely_false_negative_cte = []
 
     # get threshold
-    threshold = get_threshold(losses, conf_level=0.95)
+    if threshold is not None:
+        threshold = threshold
+    else:
+        threshold = get_threshold(losses, conf_level=0.95)
 
     # load the online uncertainty from csv
     path = os.path.join(cfg.TESTING_DATA_DIR,
@@ -205,8 +208,8 @@ def load_and_eval_vae(cfg, dataset, delete_cache):
     # plot_history(history, cfg, name, vae)
 
     losses = load_or_compute_losses(vae, dataset, name, delete_cache)
-    plot_reconstruction_losses(losses, name, get_threshold(losses, conf_level=0.95))
-    lfp_unc, lfp_cte = get_scores(cfg, losses)
+    plot_reconstruction_losses(losses, None, name, get_threshold(losses, conf_level=0.95), None)
+    lfp_unc, lfp_cte = get_scores(cfg, losses, None)
 
     # np.save('lfp_unc.npy', lfp_unc)
     # np.save('lfp_cte.npy', lfp_cte)

@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     # load the online rec errors from csv
     path = os.path.join(cfg.TESTING_DATA_DIR,
-                        'gauss-journal-track1-dave2-nominal-latent2',
+                        cfg.SIMULATION_NAME,
                         'driving_log.csv')
     data_df = pd.read_csv(path)
     online_losses = data_df["loss"]
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     encoder_mse = tensorflow.keras.models.load_model('sao/encoder-' + WHAT)
     decoder_mse = tensorflow.keras.models.load_model('sao/decoder-' + WHAT)
-    vae = VAE(model_name="encoder_mse", loss="MSE", intermediate_dim=cfg.SAO_INTERMEDIATE_DIM,
+    vae = VAE(model_name="encoder_mse", loss="MSE",
               latent_dim=cfg.SAO_LATENT_DIM, encoder=encoder_mse, decoder=decoder_mse)
     vae.compile(optimizer=tensorflow.keras.optimizers.Adam(learning_rate=0.0001))
 
