@@ -21,7 +21,7 @@ if __name__ == '__main__':
     WINDOW = 15
     ALPHA = 0.3
     sma = uncertainties.rolling(WINDOW, min_periods=1).mean()
-    ewm = uncertainties.ewm(min_periods=WINDOW).mean()
+    ewm = uncertainties.ewm(min_periods=1, alpha=ALPHA).mean()
 
     shape, loc, scale = gamma.fit(uncertainties, floc=0)
     threshold = gamma.ppf(0.68, shape, loc=loc, scale=scale)

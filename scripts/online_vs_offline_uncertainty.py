@@ -44,21 +44,16 @@ if __name__ == '__main__':
         image = np.array([image])  # the model expects 4D array
 
         start = time.time()
-        # y = float(dave2.predict(image, batch_size=1))
 
-        x = [image for idx in range(batch_size)]
+        x = np.array([image for idx in range(batch_size)])
 
-        # init empty predictions
-        y_ = np.zeros(batch_size)
-
-        for sample_id in range(batch_size):
-            # save predictions from a sample pass
-            y_[sample_id] = dave2.predict(x, batch_size)
+        # save predictions from a sample pass
+        outputs = dave2.predict_on_batch(x)
 
         # average over all passes if the final steering angle
-        steering_angle = y_.mean(axis=0)
+        steering_angle = outputs.mean(axis=0)
         # evaluate against labels
-        uncertainty = y_.var(axis=0)
+        uncertainty = outputs.var(axis=0)
 
         duration = round(time.time() - start, 4)
         # print("Prediction completed in %s." % str(duration))
@@ -89,12 +84,12 @@ if __name__ == '__main__':
 
     plt.ylabel('uncertainty')
     plt.xlabel('Frames')
-    plt.title("offline vs online (within Udacity's) uncertainty values")
+    plt.title("offline vs online (within Udacity's) uncertainty values (batch_size=" + str(batch_size) + ")")
     plt.legend()
     plt.savefig("plots/online-vs-offline-uncertainty.png")
     plt.show()
 
-    print(stats.mannwhitneyu(online_uncertainty, offline_uncertainty))
+    print(stats.mannwhitneyu(online_uncertainty, pd.Series(offline_uncertainty)))
 
     plt.figure(figsize=(80, 16))
     # display original
@@ -102,8 +97,8 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(data[min_idx]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("min diff (offline=%s, online=%s)" % (round(offline_uncertainty[min_idx], 8),
-                                                           round(online_uncertainty[min_idx], 8)),
+    plt.title("min diff (offline=%s, online=%s)" % (round(offline_uncertainty[min_idx][0], 8),
+                                                    round(online_uncertainty[min_idx], 8)),
               fontsize=50)
 
     # display reconstruction
@@ -111,8 +106,8 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(data[max_idx]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("max diff (offline=%s, online=%s)" % (round(offline_uncertainty[max_idx], 8),
-                                                           round(online_uncertainty[max_idx], 8)),
+    plt.title("max diff (offline=%s, online=%s)" % (round(offline_uncertainty[max_idx][0], 8),
+                                                    round(online_uncertainty[max_idx], 8)),
               fontsize=50)
 
     plt.savefig("plots/uncertainty-diff.png")

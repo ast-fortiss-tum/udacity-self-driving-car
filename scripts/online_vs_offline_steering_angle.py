@@ -71,6 +71,7 @@ if __name__ == '__main__':
     x_losses = np.arange(len(online_steering_angles))
     plt.plot(x_losses, online_steering_angles, color='blue', alpha=0.2, label='online steering angles')
     plt.plot(x_losses, offline_steering_angles, color='red', alpha=0.2, label='offline steering angles')
+    # plt.plot(x_losses, all_errors, color='red', label='errors')
 
     plt.ylabel('steering angles')
     plt.xlabel('Frames')
@@ -78,8 +79,6 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig("plots/online-vs-offline-steering-angle.png")
     plt.show()
-
-
 
     print(stats.mannwhitneyu(online_steering_angles, offline_steering_angles))
 
@@ -92,7 +91,7 @@ if __name__ == '__main__':
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     plt.title("min diff (offline=%s, online=%s)" % (round(offline_steering_angles[min_idx], 4),
-                                                             round(online_steering_angles[min_idx], 4)),
+                                                    round(online_steering_angles[min_idx], 4)),
               fontsize=60)
 
     # display reconstruction
@@ -101,7 +100,7 @@ if __name__ == '__main__':
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     plt.title("max diff (offline=%s, online=%s)" % (round(offline_steering_angles[max_idx], 4),
-                                                             round(online_steering_angles[max_idx], 4)),
+                                                    round(online_steering_angles[max_idx], 4)),
               fontsize=60)
 
     plt.savefig("plots/steering-angle-diff.png")

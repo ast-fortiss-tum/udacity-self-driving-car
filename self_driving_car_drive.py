@@ -39,10 +39,9 @@ prev_image_array = None
 anomaly_detection = None
 autoenconder_model = None
 frame_id = 0
-batch_size = 4  # 4 for lake track
-sampling = 15  # 15 for lake track
+batch_size = 128  # 4 for lake track
+sampling = 1  # 15 for lake track
 uncertainty = -1
-speed_limit = 35
 fid = -1
 
 
@@ -126,23 +125,18 @@ def telemetry(sid, data):
                     # pause_simulation()
 
                     # take batch of data
-                    x = [image for i in range(batch_size)]
+                    x = np.array([image for idx in range(batch_size)])
 
-                    # init empty predictions
-                    y_ = np.zeros(batch_size)
-
-                    for sample_id in range(batch_size):
-                        # save predictions from a sample pass
-                        y_[sample_id] = model.predict(x, batch_size=batch_size)
+                    # save predictions from a sample pass
+                    outputs = model.predict_on_batch(x)
 
                     # resume_simulation()
 
                     # average over all passes if the final steering angle
-                    steering_angle = y_.mean(axis=0)
+                    steering_angle = outputs.mean(axis=0)[0]
                     # evaluate against labels
-                    uncertainty = y_.var(axis=0)
-                    print(fid, uncertainty)
-
+                    uncertainty = outputs.var(axis=0)[0]
+                    # print(fid, steering_angle, uncertainty)
 
                 else:
                     steering_angle = float(model.predict(image, batch_size=1))
@@ -231,6 +225,8 @@ if __name__ == '__main__':
 
     cfg = Config()
     cfg.from_pyfile("config_my.py")
+
+    speed_limit = cfg.MAX_SPEED
 
     # load the self-driving car model
     model_path = Path(os.path.join(cfg.SDC_MODELS_DIR, cfg.SDC_MODEL_NAME))

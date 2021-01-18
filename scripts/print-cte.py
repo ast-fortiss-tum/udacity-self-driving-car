@@ -21,7 +21,7 @@ if __name__ == '__main__':
     WINDOW = 15
     ALPHA = 0.05
     sma = cte_values.rolling(WINDOW, min_periods=1).mean()
-    ewm = cte_values.ewm(min_periods=WINDOW).mean()
+    ewm = cte_values.ewm(min_periods=1, alpha=ALPHA).mean()
 
     # read CTE values
     crashes = data_df[data_df["crashed"] == 1]
