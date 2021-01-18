@@ -21,7 +21,7 @@ if __name__ == '__main__':
     WINDOW = 15
     ALPHA = 0.3
     sma = uncertainties.rolling(WINDOW, min_periods=1).mean()
-    ewm = uncertainties.ewm(min_periods=1, alpha=ALPHA).mean()
+    ewm = uncertainties.ewm(min_periods=WINDOW).mean()
 
     shape, loc, scale = gamma.fit(uncertainties, floc=0)
     threshold = gamma.ppf(0.68, shape, loc=loc, scale=scale)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
     plt.plot(x_losses, uncertainties, '--', color='black', alpha=0.4, label="original")
-    plt.plot(x_losses, sma,  '-.', color="blue", alpha=0.2,
+    plt.plot(x_losses, sma, '-.', color="blue", alpha=0.2,
              label='pred unc' + ' (sma-w' + str(WINDOW) + ')')
     plt.plot(x_losses, ewm, color="green", alpha=0.8,
              label='pred unc' + ' (ewm-a' + str(ALPHA) + ')')

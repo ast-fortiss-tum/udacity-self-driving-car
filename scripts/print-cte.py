@@ -18,10 +18,10 @@ if __name__ == '__main__':
     cte_values = data_df["cte"]
 
     # apply time-series analysis over 1s
-    WINDOW = 30
+    WINDOW = 15
     ALPHA = 0.05
     sma = cte_values.rolling(WINDOW, min_periods=1).mean()
-    ewm = cte_values.ewm(min_periods=1, alpha=ALPHA).mean()
+    ewm = cte_values.ewm(min_periods=WINDOW).mean()
 
     # read CTE values
     crashes = data_df[data_df["crashed"] == 1]
@@ -51,11 +51,11 @@ if __name__ == '__main__':
 
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
     plt.plot(x_threshold, y_threshold_2, color='red', alpha=0.2)
-    plt.plot(x_losses, cte_values,  '--', color='black', alpha=0.4, label="cte")
+    plt.plot(x_losses, cte_values, '--', color='black', alpha=0.4, label="cte")
     plt.plot(is_crash, 'x:r', markersize=4)
     plt.plot(is_crash_2, 'x:r', markersize=4)
 
-    plt.plot(x_losses, sma,  '-.', color="blue", alpha=0.4,
+    plt.plot(x_losses, sma, '-.', color="blue", alpha=0.4,
              label='cte' + ' (sma-w' + str(WINDOW) + ')')
     plt.plot(x_losses, ewm, color="green", alpha=0.8,
              label='cte' + ' (ewm-a' + str(ALPHA) + ')')
