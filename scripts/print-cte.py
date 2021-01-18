@@ -68,6 +68,6 @@ if __name__ == '__main__':
               "\n# misbehaviour: %d (%d right, %d left)" % (times, times_above, times_below),
               fontsize=20)
 
-    # plt.savefig('plots/reconstruction-plot-' + name + '.png')
+    plt.savefig('plots/cte.png')
 
     plt.show()
