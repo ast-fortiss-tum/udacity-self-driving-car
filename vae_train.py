@@ -13,7 +13,7 @@ from utils_vae import load_vae, load_data_for_vae_training
 from vae_batch_generator import Generator
 
 
-def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining):
+def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, sample_weights):
     """
     Train the VAE model
     """
@@ -45,8 +45,14 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining):
 
     x_train = shuffle(x_train, random_state=0)
     x_test = shuffle(x_test, random_state=0)
-    train_generator = Generator(x_train, True, cfg)
-    val_generator = Generator(x_test, True, cfg)
+
+    if retraining:
+        weights = sample_weights
+    else:
+        weights = np.ones(shape=(len(x_train),))
+
+    train_generator = Generator(x_train, True, cfg, weights)
+    val_generator = Generator(x_test, True, cfg, weights)
 
     history = vae.fit(train_generator,
                       validation_data=val_generator,
@@ -60,9 +66,9 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining):
     plot_history(history.history, cfg, vae)
 
     # save the last model (might not be the best)
-    vae.encoder.save(my_encoder.__str__(), save_format="tf")
+    vae.encoder.save(my_encoder.__str__(), save_format="tf", include_optimizer=True)
 
-    vae.decoder.save(my_decoder.__str__(), save_format="tf")
+    vae.decoder.save(my_decoder.__str__(), save_format="tf", include_optimizer=True)
 
     # save history file
     np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)

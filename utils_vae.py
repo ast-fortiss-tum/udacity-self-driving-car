@@ -121,7 +121,7 @@ def load_data_for_vae_training(cfg):
 
 
 # TODO: redundant with other similar functions
-def load_data_for_vae_retraining(cfg):
+def load_data_for_vae_retraining(cfg, sampling):
     """
     Load training data, samples them each 15th row, and split it into training and validation set
     """
@@ -145,8 +145,8 @@ def load_data_for_vae_retraining(cfg):
                                 'driving_log.csv')
             data_df = pd.read_csv(path)
 
-            # print("Sampling every 15th frame")
-            # data_df = data_df[data_df.index % 2 == 0]  # Selects every 15th row starting from 0
+            print("Sampling every " + str(sampling) + "th frame")
+            data_df = data_df[data_df.index % sampling == 0]
 
             if x is None:
                 if cfg.USE_ONLY_CENTER_IMG:

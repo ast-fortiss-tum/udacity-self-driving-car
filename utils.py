@@ -281,58 +281,23 @@ def load_improvement_set(cfg, ids):
     return x
 
 
+# load the paths to the images in the cfg.SIMULATION_NAME directory
 def load_all_images(cfg):
-    """
-    Load all driving images
-    TODO: inefficient
-    """
-    cfg.TRACK1_DRIVING_STYLES = ["normal"]
-    drive = get_driving_styles(cfg)
+    path = os.path.join(cfg.TESTING_DATA_DIR,
+                        cfg.SIMULATION_NAME,
+                        'driving_log.csv')
+    data_df = pd.read_csv(path)
 
-    print("Loading data set " + str(cfg.TRACK) + str(drive))
+    x = data_df["center"]
+    print("read %d images from directory %s" % (len(x), cfg.SIMULATION_NAME))
 
     start = time.time()
-
-    x = None
-    path = None
-
-    for drive_style in drive:
-        try:
-            path = os.path.join(cfg.TRAINING_DATA_DIR,
-                                cfg.TRAINING_SET_DIR,
-                                cfg.TRACK,
-                                drive_style,
-                                'driving_log.csv')
-            data_df = pd.read_csv(path)
-
-            if x is None:
-                x = data_df[['center']].values
-            else:
-                x = np.concatenate((x, data_df[['center']].values), axis=0)
-
-            if cfg.TRACK == "track1":
-                # print("Loading only the first 1102 images from %s (one lap)" % track)
-                x = x[:cfg.TRACK1_IMG_PER_LAP]
-            else:
-                print("Not yet implemented! Quitting...")
-                exit()
-
-        except FileNotFoundError:
-            print("Unable to read file %s" % path)
-            continue
-
-    if x is None:
-        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
-        exit()
 
     # load the images
     images = np.empty([len(x), IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
 
-    # TODO: loading only center image for now.
-    print("WARNING! For evaluation, loading only front-facing images")
-
     for i, path in enumerate(x):
-        image = load_image(cfg.TRAINING_SET_DIR, path[0])  # load center images
+        image = mpimg.imread(path)  # load center images
 
         # visualize whether the input image as expected
         # import matplotlib.pyplot as plt
@@ -350,16 +315,15 @@ def load_all_images(cfg):
 
 
 def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshold):
-
     plt.figure(figsize=(20, 4))
     x_losses = np.arange(len(losses))
 
     x_threshold = np.arange(len(x_losses))
     y_threshold = [threshold] * len(x_threshold)
-    plt.plot(x_threshold, y_threshold, '--', color='black', alpha=0.4, label='new threshold')
+    plt.plot(x_threshold, y_threshold, '--', color='black', alpha=0.4, label='old threshold')
 
     if new_threshold is not None:
-        plt.plot(x_threshold, [new_threshold] * len(x_threshold), color='red', alpha=0.4, label='old threshold')
+        plt.plot(x_threshold, [new_threshold] * len(x_threshold), color='red', alpha=0.4, label='new threshold')
 
     plt.plot(x_losses, losses, '-.', color='blue', alpha=0.7, label='original')
     if new_losses is not None:

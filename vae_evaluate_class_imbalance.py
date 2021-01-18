@@ -27,7 +27,7 @@ def main():
     # 1. compute reconstruction error on nominal images
     dataset = load_all_images(cfg)
     vae, name = load_vae(cfg, load_vae_from_disk=True)
-    losses = load_or_compute_losses(vae, dataset, name, delete_cache=False)
+    losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
     threshold_nominal = get_threshold(losses, conf_level=0.95)
     plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
     lfp_unc, lfp_cte = get_scores(cfg, losses, threshold_nominal)
@@ -38,7 +38,7 @@ def main():
     # exit()
 
     # 2. compute improvement set and retrain
-    x_train, x_test = load_data_for_vae_retraining(cfg)
+    x_train, x_test = load_data_for_vae_retraining(cfg, sampling=1)
     improvement_set = load_improvement_set(cfg, lfp_unc)
 
     print("Old training data set: " + str(len(x_train)) + " elements")
@@ -47,7 +47,7 @@ def main():
     initial_improvement_set = improvement_set
 
     # TODO: experimental stuff
-    #initial_improvement_set = initial_improvement_set[20:40]
+    # initial_improvement_set = initial_improvement_set[20:40]
 
     for i in range(cfg.IMPROVEMENT_RATIO - 1):
         temp = initial_improvement_set[:]
@@ -64,8 +64,11 @@ def main():
 
     print("New training data set: " + str(len(x_train)) + " elements")
 
-    name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True)
+    weights = np.ones(shape=(len(losses),))
+    weights[lfp_unc] = 2
+
+    # name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
 
     encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
     decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
