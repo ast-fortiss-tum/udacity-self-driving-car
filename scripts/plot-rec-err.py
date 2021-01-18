@@ -24,9 +24,8 @@ if __name__ == '__main__':
     all_err = data_df['loss']
 
     WINDOW = 15
-    ALPHA = 0.2
-    sma = all_err.rolling(WINDOW, min_periods=1).mean()
-    ewm = all_err.ewm(min_periods=1, alpha=ALPHA).mean()
+    sma = all_err.rolling(WINDOW, min_periods=WINDOW).mean()
+    ewm = all_err.ewm(min_periods=WINDOW).mean()
 
     shape, loc, scale = gamma.fit(all_err, floc=0)
     threshold = gamma.ppf(0.68, shape, loc=loc, scale=scale)
