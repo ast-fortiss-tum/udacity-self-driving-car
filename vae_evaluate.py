@@ -1,5 +1,6 @@
 import os
 
+import csv
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -91,7 +92,7 @@ def get_threshold(losses, conf_level=0.95):
     # return 391.3103493443211
 
 
-def get_scores(cfg, losses, threshold):
+def get_scores(cfg, name, losses, threshold):
     # TODO: apply time-series analysis
 
     # only occurring when conditions == unexpected
@@ -120,7 +121,7 @@ def get_scores(cfg, losses, threshold):
 
     # load the online uncertainty from csv
     path = os.path.join(cfg.TESTING_DATA_DIR,
-                        'gauss-journal-track1-dave2-nominal-latent2',
+                        cfg.SIMULATION_NAME,
                         'driving_log.csv')
     data_df = pd.read_csv(path)
     uncertainties = data_df["uncertainty"]
@@ -197,6 +198,21 @@ def get_scores(cfg, losses, threshold):
     print("likely_false_negative (cte): %d" % len(likely_false_negative_cte))
     print("likely_false_positive (cte): %d" % len(likely_false_positive_cte))
     print("likely_true_negative (cte): %d" % len(likely_true_negative_cte))
+
+    if not os.path.exists('class_imbalance.csv'):
+        with open('class_imbalance.csv', mode='w', newline='') as class_imbalance_result_file:
+            writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+                                lineterminator='\n')
+            writer.writerow(["autoencoder", "fp", "lfp_unc", "lfp_cte"])
+            writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte)])
+            class_imbalance_result_file.flush()
+            class_imbalance_result_file.close()
+    else:
+        with open('class_imbalance.csv', mode='a') as class_imbalance_result_file:
+            writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte)])
+            class_imbalance_result_file.flush()
+            class_imbalance_result_file.close()
 
     return likely_false_positive_unc, likely_false_positive_cte
 

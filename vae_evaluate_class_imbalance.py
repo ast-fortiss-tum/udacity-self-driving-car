@@ -14,10 +14,7 @@ from vae_evaluate import load_or_compute_losses, get_threshold, get_scores
 from vae_train import train_vae_model
 
 
-def main():
-    cfg = Config()
-    cfg.from_pyfile("config_my.py")
-
+def evaluate_class_imbalance(cfg):
     # remove old files
     if os.path.exists('lfp_unc_before.npy'):
         os.remove('lfp_unc_before.npy')
@@ -30,7 +27,7 @@ def main():
     losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
     threshold_nominal = get_threshold(losses, conf_level=0.95)
     plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
-    lfp_unc, lfp_cte = get_scores(cfg, losses, threshold_nominal)
+    lfp_unc, lfp_cte = get_scores(cfg, name, losses, threshold_nominal)
 
     np.save('lfp_unc_before.npy', lfp_unc)
     np.save('lfp_cte_before.npy', lfp_cte)
@@ -46,9 +43,6 @@ def main():
 
     initial_improvement_set = improvement_set
 
-    # TODO: experimental stuff
-    # initial_improvement_set = initial_improvement_set[20:40]
-
     for i in range(cfg.IMPROVEMENT_RATIO - 1):
         temp = initial_improvement_set[:]
         improvement_set = np.concatenate((temp, improvement_set), axis=0)
@@ -59,15 +53,12 @@ def main():
     x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
     x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
 
-    # TODO: remove this, only experimental
-    # x_train = improvement_set
-
     print("New training data set: " + str(len(x_train)) + " elements")
 
-    weights = np.ones(shape=(len(losses),))
-    weights[lfp_unc] = 2
+    # magic happens here
+    weights = np.array(losses)
 
-    # name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
+    name = name + '-RETRAINED'  # -' + str(cfg.IMPROVEMENT_RATIO) + "X"
     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
 
     encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
@@ -83,15 +74,19 @@ def main():
 
     # 3. evaluate w/ old threshold
     new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
-    threshold_nominal_new = get_threshold(new_losses, conf_level=0.95)
-    plot_reconstruction_losses(losses, new_losses, name, threshold_nominal, threshold_nominal_new)
-    get_scores(cfg, new_losses, threshold_nominal)
-    get_scores(cfg, new_losses, threshold_nominal_new)
+    # threshold_nominal_new = get_threshold(new_losses, conf_level=0.95)
+    plot_reconstruction_losses(losses, new_losses, name, threshold_nominal, None)
+    get_scores(cfg, name, new_losses, threshold_nominal)
 
-    if os.path.exists('lfp_unc_before.npy'):
-        os.remove('lfp_unc_before.npy')
-    if os.path.exists('lfp_cte_before.np'):
-        os.remove('lfp_cte_before.npy')
+    # print("Effectiveness on new data")
+    # get_scores(cfg, new_losses, threshold_nominal_new)
+
+
+def main():
+    cfg = Config()
+    cfg.from_pyfile("config_my.py")
+
+    evaluate_class_imbalance(cfg)
 
 
 if __name__ == '__main__':

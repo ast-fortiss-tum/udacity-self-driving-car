@@ -46,7 +46,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
     x_train = shuffle(x_train, random_state=0)
     x_test = shuffle(x_test, random_state=0)
 
-    if retraining:
+    if retraining or sample_weights is not None:
         weights = sample_weights
     else:
         weights = np.ones(shape=(len(x_train),))
@@ -80,7 +80,7 @@ def main():
 
     x_train, x_test = load_data_for_vae_training(cfg)
     vae, name = load_vae(cfg, load_vae_from_disk=False)
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=False)
+    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=False, sample_weights=None)
 
 
 if __name__ == '__main__':

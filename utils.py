@@ -320,7 +320,7 @@ def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshol
 
     x_threshold = np.arange(len(x_losses))
     y_threshold = [threshold] * len(x_threshold)
-    plt.plot(x_threshold, y_threshold, '--', color='black', alpha=0.4, label='old threshold')
+    plt.plot(x_threshold, y_threshold, '--', color='black', alpha=0.4, label='threshold')
 
     if new_threshold is not None:
         plt.plot(x_threshold, [new_threshold] * len(x_threshold), color='red', alpha=0.4, label='new threshold')
