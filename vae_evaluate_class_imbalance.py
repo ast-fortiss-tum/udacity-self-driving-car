@@ -26,7 +26,7 @@ def evaluate_class_imbalance(cfg):
     vae, name = load_vae(cfg, load_vae_from_disk=True)
     losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
     threshold_nominal = get_threshold(losses, conf_level=0.95)
-    plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
+    # plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
     lfp_unc, lfp_cte = get_scores(cfg, name, losses, threshold_nominal)
 
     np.save('lfp_unc_before.npy', lfp_unc)
@@ -50,6 +50,7 @@ def evaluate_class_imbalance(cfg):
     x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
                                                                        random_state=0)
 
+    # TODO: improvement_set cannot load right/left images and crashes
     x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
     x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
 
@@ -58,7 +59,7 @@ def evaluate_class_imbalance(cfg):
     # magic happens here
     weights = np.array(losses)
 
-    name = name + '-RETRAINED'  # -' + str(cfg.IMPROVEMENT_RATIO) + "X"
+    name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
 
     encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)

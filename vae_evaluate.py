@@ -205,14 +205,14 @@ def get_scores(cfg, name, losses, threshold):
                                 lineterminator='\n')
             writer.writerow(["autoencoder", "fp", "lfp_unc", "lfp_cte"])
             writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte)])
-            class_imbalance_result_file.flush()
-            class_imbalance_result_file.close()
+            # class_imbalance_result_file.flush()
+            # class_imbalance_result_file.close()
     else:
         with open('class_imbalance.csv', mode='a') as class_imbalance_result_file:
             writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte)])
-            class_imbalance_result_file.flush()
-            class_imbalance_result_file.close()
+            # class_imbalance_result_file.flush()
+            # class_imbalance_result_file.close()
 
     return likely_false_positive_unc, likely_false_positive_cte
 

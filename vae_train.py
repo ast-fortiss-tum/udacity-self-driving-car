@@ -63,7 +63,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
     duration_train = time.time() - start
     print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
-    plot_history(history.history, cfg, vae)
+    # plot_history(history.history, cfg, vae)
 
     # save the last model (might not be the best)
     vae.encoder.save(my_encoder.__str__(), save_format="tf", include_optimizer=True)
