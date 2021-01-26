@@ -8,9 +8,9 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    latent_space = [32]
+    latent_space = [16]
     loss_func = ["MSE", "VAE"]
-    use_crop = [False]  # True gives poor results
+    use_crop = [False, True]  # True gives poor results
 
     for ld in latent_space:
         cfg.SAO_LATENT_DIM = ld
@@ -23,7 +23,7 @@ if __name__ == '__main__':
                 x_train, x_test = load_data_for_vae_training(cfg)
 
                 vae, name = load_vae(cfg, load_vae_from_disk=False)
-                train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=False,
+                train_vae_model(cfg, vae, name, x_train, x_test, delete_model=False, retraining=False,
                                 sample_weights=None)
 
     for ld in latent_space:
@@ -32,4 +32,11 @@ if __name__ == '__main__':
             cfg.LOSS_SAO_MODEL = loss
             for crop in use_crop:
                 cfg.USE_CROP = crop
+
+                # Gauss's setting
+                cfg.IMPROVEMENT_RATIO = 20
+                evaluate_class_imbalance(cfg)
+
+                # JSEP's setting
+                cfg.IMPROVEMENT_RATIO = 1
                 evaluate_class_imbalance(cfg)
