@@ -38,6 +38,16 @@ def evaluate_class_imbalance(cfg):
     x_train, x_test = load_data_for_vae_retraining(cfg, sampling=1)
     improvement_set = load_improvement_set(cfg, lfp_unc)
 
+    # when using center/left/right images, I have to create 3d arrays
+    if cfg.USE_ONLY_CENTER_IMG is False:
+        improvement_set_allimg = x_train[:len(improvement_set)]
+        for i in range(len(improvement_set)):
+            improvement_set_allimg[i][0] = improvement_set[i][0]
+            improvement_set_allimg[i][1] = improvement_set[i][0]
+            improvement_set_allimg[i][2] = improvement_set[i][0]
+
+        improvement_set = improvement_set_allimg
+
     print("Old training data set: " + str(len(x_train)) + " elements")
     print("Improvement data set: " + str(len(improvement_set)) + " elements")
 
