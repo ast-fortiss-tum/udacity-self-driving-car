@@ -39,10 +39,8 @@ prev_image_array = None
 anomaly_detection = None
 autoenconder_model = None
 frame_id = 0
-batch_size = 128  # 4 for lake track
-sampling = 1  # 15 for lake track
+batch_size = 128
 uncertainty = -1
-fid = -1
 
 
 @sio.on('telemetry')
@@ -111,35 +109,20 @@ def telemetry(sid, data):
             global steering_angle
             global uncertainty
             global batch_size
-            global sampling
-            global fid
 
-            # predict the steering angle for the image
             if cfg.USE_PREDICTIVE_UNCERTAINTY:
 
-                fid += 1
-                # print(fid)
+                # take batch of data
+                x = np.array([image for idx in range(batch_size)])
 
-                if fid % sampling == 0 or fid == 0:
+                # save predictions from a sample pass
+                outputs = model.predict_on_batch(x)
 
-                    # pause_simulation()
+                # average over all passes if the final steering angle
+                steering_angle = outputs.mean(axis=0)[0]
+                # evaluate against labels
+                uncertainty = outputs.var(axis=0)[0]
 
-                    # take batch of data
-                    x = np.array([image for idx in range(batch_size)])
-
-                    # save predictions from a sample pass
-                    outputs = model.predict_on_batch(x)
-
-                    # resume_simulation()
-
-                    # average over all passes if the final steering angle
-                    steering_angle = outputs.mean(axis=0)[0]
-                    # evaluate against labels
-                    uncertainty = outputs.var(axis=0)[0]
-                    # print(fid, steering_angle, uncertainty)
-
-                else:
-                    steering_angle = float(model.predict(image, batch_size=1))
             else:
                 steering_angle = float(model.predict(image, batch_size=1))
 
@@ -164,7 +147,8 @@ def telemetry(sid, data):
 
             global frame_id
 
-            send_control(steering_angle, throttle, confidence, loss, cfg.MAX_LAPS)
+            send_control(steering_angle, throttle, confidence, loss, cfg.MAX_LAPS, uncertainty)
+            
             if cfg.TESTING_DATA_DIR:
                 csv_path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME)
                 utils.write_csv_line(csv_path,
@@ -187,28 +171,10 @@ def telemetry(sid, data):
 @sio.on('connect')  # DO NOT CHANGE THIS
 def connect(sid, environ):
     print("connect ", sid)
-    send_control(0, 0, 1, 0, 1)
+    send_control(0, 0, 1, 0, 1, 1)
 
 
-def ack_pause():
-    print('pause message was received!')
-
-
-def ack_resume():
-    print('resume message was received!')
-
-
-@sio.on('pause')  # DO NOT CHANGE THIS
-def pause_simulation():
-    sio.emit("pause", callback=ack_pause())
-
-
-@sio.on('resume')  # DO NOT CHANGE THIS
-def resume_simulation():
-    sio.emit("resume", callback=ack_resume())
-
-
-def send_control(steering_angle, throttle, confidence, loss, max_laps):  # DO NOT CHANGE THIS
+def send_control(steering_angle, throttle, confidence, loss, max_laps, uncertainty):  # DO NOT CHANGE THIS
     sio.emit(
         "steer",
         data={
@@ -216,7 +182,8 @@ def send_control(steering_angle, throttle, confidence, loss, max_laps):  # DO NO
             'throttle': throttle.__str__(),
             'confidence': confidence.__str__(),
             'loss': loss.__str__(),
-            'max_laps': max_laps.__str__()
+            'max_laps': max_laps.__str__(),
+            'uncertainty': uncertainty.__str__(),
         },
         skip_sid=True)
 
