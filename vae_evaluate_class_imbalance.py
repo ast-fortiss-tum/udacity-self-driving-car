@@ -16,83 +16,161 @@ from vae_train import train_vae_model
 
 def evaluate_class_imbalance(cfg):
     # remove old files
-    if os.path.exists('lfp_unc_before.npy'):
-        os.remove('lfp_unc_before.npy')
-    if os.path.exists('lfp_cte_before.np'):
-        os.remove('lfp_cte_before.npy')
+    if os.path.exists('likely_false_positive_uncertainty.npy'):
+        os.remove('likely_false_positive_uncertainty.npy')
+    if os.path.exists('likely_false_positive_cte.npy'):
+        os.remove('likely_false_positive_cte.npy')
+    if os.path.exists('likely_false_positive_common.npy'):
+        os.remove('likely_false_positive_common.npy')
 
-    # 1. compute reconstruction error on nominal images
+    ''' 
+        1. compute reconstruction error on nominal images
+        and compute the likely false positives
+    '''
     dataset = load_all_images(cfg)
     vae, name = load_vae(cfg, load_vae_from_disk=True)
-    losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
-    threshold_nominal = get_threshold(losses, conf_level=0.95)
-    # plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
-    lfp_unc, lfp_cte = get_scores(cfg, name, losses, threshold_nominal)
+    original_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
+    threshold_nominal = get_threshold(original_losses, conf_level=0.95)
+    likely_fps_uncertainty, likely_fps_cte = get_scores(cfg, name, original_losses, threshold_nominal)
 
-    np.save('lfp_unc_before.npy', lfp_unc)
-    np.save('lfp_cte_before.npy', lfp_cte)
+    assert len(likely_fps_uncertainty) > 0
+    assert len(likely_fps_cte) > 0
 
-    # exit()
+    likely_fps_common = set(likely_fps_uncertainty).intersection()
+    assert len(likely_fps_common) > 0
 
-    # 2. compute improvement set and retrain
-    x_train, x_test = load_data_for_vae_retraining(cfg, sampling=1)
-    improvement_set = load_improvement_set(cfg, lfp_unc)
+    # save the likely false positive
+    np.save('likely_false_positive_uncertainty.npy', likely_fps_uncertainty)
+    np.save('likely_false_positive_cte.npy', likely_fps_cte)
+    np.save('likely_false_positive_common.npy', likely_fps_common)
 
-    # when using center/left/right images, I have to create 3d arrays
-    if cfg.USE_ONLY_CENTER_IMG is False:
-        improvement_set_allimg = x_train[:len(improvement_set)]
-        for i in range(len(improvement_set)):
-            improvement_set_allimg[i][0] = improvement_set[i][0]
-            improvement_set_allimg[i][1] = improvement_set[i][0]
-            improvement_set_allimg[i][2] = improvement_set[i][0]
+    for mode in ['UNC', 'CTE', 'COMMON']:
 
-        improvement_set = improvement_set_allimg
+        if mode == 'UNC':
+            lfps = likely_fps_uncertainty
+        elif mode == 'CTE':
+            lfps = likely_fps_cte
+        else:
+            lfps = likely_fps_common
 
-    print("Old training data set: " + str(len(x_train)) + " elements")
-    print("Improvement data set: " + str(len(improvement_set)) + " elements")
+        ''' 
+            2. compute improvement set
+        '''
+        x_train, x_test = load_data_for_vae_retraining(cfg, sampling=15)
+        improvement_set = load_improvement_set(cfg, lfps)
 
-    initial_improvement_set = improvement_set
+        # when using center/left/right images, I have to create 3d arrays
+        if cfg.USE_ONLY_CENTER_IMG is False:
+            improvement_set_allimg = x_train[:len(improvement_set)]
+            for i in range(len(improvement_set)):
+                improvement_set_allimg[i][0] = improvement_set[i][0]
+                improvement_set_allimg[i][1] = improvement_set[i][0]
+                improvement_set_allimg[i][2] = improvement_set[i][0]
 
-    for i in range(cfg.IMPROVEMENT_RATIO - 1):
+            improvement_set = improvement_set_allimg
+
+        print("Old training data set: " + str(len(x_train)) + " elements")
+        print("Improvement data set: " + str(len(improvement_set)) + " elements")
+
+        initial_improvement_set = improvement_set
+
+        for improvement_ratio in [5, 10, 20]:
+            print("Using improvement ratio: " + str(improvement_ratio))
+            for i in range(improvement_ratio - 1):
+                temp = initial_improvement_set[:]
+                improvement_set = np.concatenate((temp, improvement_set), axis=0)
+
+            x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
+                                                                               random_state=0)
+
+            x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
+            x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
+
+            print("New training data set: " + str(len(x_train)) + " elements")
+
+            ''' 
+                3. retrain using GAUSS's configuration
+            '''
+            weights = None
+
+            name = name + '-classimbalance-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X-" + mode
+            train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
+
+            encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + name)
+            decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + name)
+            print("loaded retrained VAE from disk")
+
+            vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
+                      loss=cfg.LOSS_SAO_MODEL,
+                      latent_dim=cfg.SAO_LATENT_DIM,
+                      encoder=encoder,
+                      decoder=decoder)
+            vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
+
+            ''' 
+                4. evaluate retrained model (GAUSS)  
+            '''
+            new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
+            plot_reconstruction_losses(original_losses, new_losses, name, threshold_nominal, None)
+            get_scores(cfg, name, new_losses, threshold_nominal)
+
+        ''' 
+            5. load data for retraining
+        '''
+        x_train, x_test = load_data_for_vae_retraining(cfg, sampling=15)
+        improvement_set = load_improvement_set(cfg, lfps)
+
+        # when using center/left/right images, I have to create 3d arrays
+        if cfg.USE_ONLY_CENTER_IMG is False:
+            improvement_set_allimg = x_train[:len(improvement_set)]
+            for i in range(len(improvement_set)):
+                improvement_set_allimg[i][0] = improvement_set[i][0]
+                improvement_set_allimg[i][1] = improvement_set[i][0]
+                improvement_set_allimg[i][2] = improvement_set[i][0]
+
+            improvement_set = improvement_set_allimg
+
+        print("Old training data set: " + str(len(x_train)) + " elements")
+        print("Improvement data set: " + str(len(improvement_set)) + " elements")
+
+        initial_improvement_set = improvement_set
+
         temp = initial_improvement_set[:]
         improvement_set = np.concatenate((temp, improvement_set), axis=0)
 
-    x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
-                                                                       random_state=0)
+        x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
+                                                                           random_state=0)
 
-    x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
-    x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
+        x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
+        x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
 
-    print("New training data set: " + str(len(x_train)) + " elements")
+        ''' 
+            6. retrain using JSEP's configuration
+        '''
+        # magic happens here
+        weights = np.array(original_losses)
 
-    # magic happens here
-    if cfg.IMPROVEMENT_RATIO > 1:
-        weights = None
-    else:
-        weights = np.array(losses)
+        vae, name = load_vae(cfg, load_vae_from_disk=True)
+        name = name + '-classimbalance-RETRAINED-JSEP-' + mode
+        train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
 
-    name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
-    train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
+        encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + name)
+        decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + name)
+        print("loaded retrained VAE from disk")
 
-    encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
-    decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
-    print("loaded adapted VAE from disk")
+        vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
+                  loss=cfg.LOSS_SAO_MODEL,
+                  latent_dim=cfg.SAO_LATENT_DIM,
+                  encoder=encoder,
+                  decoder=decoder)
+        vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
 
-    vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
-              loss=cfg.LOSS_SAO_MODEL,
-              latent_dim=cfg.SAO_LATENT_DIM,
-              encoder=encoder,
-              decoder=decoder)
-    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
-
-    # 3. evaluate w/ old threshold
-    new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
-    # threshold_nominal_new = get_threshold(new_losses, conf_level=0.95)
-    plot_reconstruction_losses(losses, new_losses, name, threshold_nominal, None)
-    get_scores(cfg, name, new_losses, threshold_nominal)
-
-    # print("Effectiveness on new data")
-    # get_scores(cfg, new_losses, threshold_nominal_new)
+        ''' 
+            7. evaluate retrained (JSEP) 
+        '''
+        new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
+        plot_reconstruction_losses(original_losses, new_losses, name, threshold_nominal, None)
+        get_scores(cfg, name, new_losses, threshold_nominal)
 
 
 def main():
