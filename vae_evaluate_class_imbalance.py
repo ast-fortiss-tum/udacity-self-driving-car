@@ -36,7 +36,7 @@ def evaluate_class_imbalance(cfg):
     assert len(likely_fps_uncertainty) > 0
     assert len(likely_fps_cte) > 0
 
-    likely_fps_common = set(likely_fps_uncertainty).intersection()
+    likely_fps_common = np.sort(list(set(likely_fps_uncertainty).intersection()))
     assert len(likely_fps_common) > 0
 
     # save the likely false positive
@@ -44,7 +44,7 @@ def evaluate_class_imbalance(cfg):
     np.save('likely_false_positive_cte.npy', likely_fps_cte)
     np.save('likely_false_positive_common.npy', likely_fps_common)
 
-    for mode in ['UNC', 'CTE', 'COMMON']:
+    for mode in ['UNC', 'CTE', 'COM']:
 
         if mode == 'UNC':
             lfps = likely_fps_uncertainty
@@ -74,7 +74,7 @@ def evaluate_class_imbalance(cfg):
 
         initial_improvement_set = improvement_set
 
-        for improvement_ratio in [5, 10, 20]:
+        for improvement_ratio in [2, 5, 10]:
             print("Using improvement ratio: " + str(improvement_ratio))
             for i in range(improvement_ratio - 1):
                 temp = initial_improvement_set[:]
@@ -93,14 +93,15 @@ def evaluate_class_imbalance(cfg):
             '''
             weights = None
 
-            name = name + '-classimbalance-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X-" + mode
-            train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
+            newname = name + '-classimbalance-RETRAINED-' + str(improvement_ratio) + "X-" + mode
+            train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True,
+                            sample_weights=weights)
 
-            encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + name)
-            decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + name)
+            encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + newname)
+            decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + newname)
             print("loaded retrained VAE from disk")
 
-            vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
+            vae = VAE(model_name=newname,
                       loss=cfg.LOSS_SAO_MODEL,
                       latent_dim=cfg.SAO_LATENT_DIM,
                       encoder=encoder,
@@ -110,14 +111,14 @@ def evaluate_class_imbalance(cfg):
             ''' 
                 4. evaluate retrained model (GAUSS)  
             '''
-            new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
-            plot_reconstruction_losses(original_losses, new_losses, name, threshold_nominal, None)
-            get_scores(cfg, name, new_losses, threshold_nominal)
+            new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
+            plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None)
+            get_scores(cfg, newname, new_losses, threshold_nominal)
 
         ''' 
             5. load data for retraining
         '''
-        x_train, x_test = load_data_for_vae_retraining(cfg, sampling=15)
+        x_train, x_test = load_data_for_vae_retraining(cfg, sampling=1)
         improvement_set = load_improvement_set(cfg, lfps)
 
         # when using center/left/right images, I have to create 3d arrays
@@ -151,14 +152,14 @@ def evaluate_class_imbalance(cfg):
         weights = np.array(original_losses)
 
         vae, name = load_vae(cfg, load_vae_from_disk=True)
-        name = name + '-classimbalance-RETRAINED-JSEP-' + mode
-        train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
+        newname = name + '-classimbalance-RETRAINED-JSEP-' + mode
+        train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
 
-        encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + name)
-        decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + name)
+        encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + newname)
+        decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + newname)
         print("loaded retrained VAE from disk")
 
-        vae = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
+        vae = VAE(model_name=newname,
                   loss=cfg.LOSS_SAO_MODEL,
                   latent_dim=cfg.SAO_LATENT_DIM,
                   encoder=encoder,
@@ -168,9 +169,9 @@ def evaluate_class_imbalance(cfg):
         ''' 
             7. evaluate retrained (JSEP) 
         '''
-        new_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
-        plot_reconstruction_losses(original_losses, new_losses, name, threshold_nominal, None)
-        get_scores(cfg, name, new_losses, threshold_nominal)
+        new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
+        plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None)
+        get_scores(cfg, newname, new_losses, threshold_nominal)
 
 
 def main():

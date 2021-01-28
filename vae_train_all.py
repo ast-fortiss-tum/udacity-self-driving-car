@@ -2,16 +2,15 @@ import utils
 from config import Config
 from utils_vae import load_data_for_vae_training, load_vae
 from vae_train import train_vae_model
-from vae_evaluate_class_imbalance import evaluate_class_imbalance
 
 if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    latent_space = [4]
-    loss_func = ["MSE", "VAE"]
-    use_only_center_image = [True, False]  # [True, False]
-    use_crop = [False, True]  # True gives poor results
+    latent_space = [2]
+    loss_func = ["MSE"]
+    use_only_center_image = [True]
+    use_crop = [False]  # True gives poor results
 
     for ld in latent_space:
         cfg.SAO_LATENT_DIM = ld
@@ -28,21 +27,3 @@ if __name__ == '__main__':
                     vae, name = load_vae(cfg, load_vae_from_disk=False)
                     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=False,
                                     sample_weights=None)
-
-    for ld in latent_space:
-        cfg.SAO_LATENT_DIM = ld
-        for loss in loss_func:
-            cfg.LOSS_SAO_MODEL = loss
-            for input_image in use_only_center_image:
-                cfg.USE_ONLY_CENTER_IMG = input_image
-            for crop in use_crop:
-                cfg.USE_CROP = crop
-
-                # Gauss's setting
-                cfg.IMPROVEMENT_RATIO = 20
-                evaluate_class_imbalance(cfg)
-
-                # TODO: losses are computed twice!
-                # JSEP's setting
-                cfg.IMPROVEMENT_RATIO = 1
-                evaluate_class_imbalance(cfg)
