@@ -213,7 +213,7 @@ if __name__ == '__main__':
                             latent_dim=cfg.SAO_LATENT_DIM,
                             encoder=encoder,
                             decoder=decoder)
-    anomaly_detection.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0001))
+    anomaly_detection.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
 
     # create the output dir
     if cfg.TESTING_DATA_DIR != '':
