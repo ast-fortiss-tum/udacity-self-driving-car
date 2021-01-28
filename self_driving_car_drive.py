@@ -122,7 +122,6 @@ def telemetry(sid, data):
                 steering_angle = outputs.mean(axis=0)[0]
                 # evaluate against labels
                 uncertainty = outputs.var(axis=0)[0]
-
             else:
                 steering_angle = float(model.predict(image, batch_size=1))
 

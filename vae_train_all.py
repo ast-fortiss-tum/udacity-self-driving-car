@@ -8,17 +8,17 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    latent_space = [64]
+    latent_space = [4]
     loss_func = ["MSE", "VAE"]
-    use_only_center_image = [True]  # [True, False]
+    use_only_center_image = [True, False]  # [True, False]
     use_crop = [False, True]  # True gives poor results
 
     for ld in latent_space:
         cfg.SAO_LATENT_DIM = ld
         for loss in loss_func:
             cfg.LOSS_SAO_MODEL = loss
-            for input in use_only_center_image:
-                cfg.USE_ONLY_CENTER_IMG = input
+            for input_image in use_only_center_image:
+                cfg.USE_ONLY_CENTER_IMG = input_image
                 for crop in use_crop:
                     cfg.USE_CROP = crop
 
@@ -33,8 +33,8 @@ if __name__ == '__main__':
         cfg.SAO_LATENT_DIM = ld
         for loss in loss_func:
             cfg.LOSS_SAO_MODEL = loss
-            for input in use_only_center_image:
-                cfg.USE_ONLY_CENTER_IMG = input
+            for input_image in use_only_center_image:
+                cfg.USE_ONLY_CENTER_IMG = input_image
             for crop in use_crop:
                 cfg.USE_CROP = crop
 
@@ -42,6 +42,7 @@ if __name__ == '__main__':
                 cfg.IMPROVEMENT_RATIO = 20
                 evaluate_class_imbalance(cfg)
 
+                # TODO: losses are computed twice!
                 # JSEP's setting
                 cfg.IMPROVEMENT_RATIO = 1
                 evaluate_class_imbalance(cfg)

@@ -68,7 +68,7 @@ class Generator(Sequence):
 
             image = resize(image)
 
-            # visualize whether the input image as expected
+            # visualize whether the input_image image as expected
             # import matplotlib.pyplot as plt
             # plt.imshow(image)
             # plt.show()

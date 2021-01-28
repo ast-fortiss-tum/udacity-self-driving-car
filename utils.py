@@ -48,7 +48,7 @@ def crop(image):
 
 def resize(image):
     """
-    Resize the image to the input shape used by the network model
+    Resize the image to the input_image shape used by the network model
     """
     return cv2.resize(image, (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT), cv2.INTER_AREA)
 
@@ -299,7 +299,7 @@ def load_all_images(cfg):
     for i, path in enumerate(x):
         image = mpimg.imread(path)  # load center images
 
-        # visualize whether the input image as expected
+        # visualize whether the input_image image as expected
         # import matplotlib.pyplot as plt
         # plt.imshow(image)
         # plt.show()

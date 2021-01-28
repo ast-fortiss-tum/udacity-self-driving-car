@@ -60,14 +60,16 @@ def evaluate_class_imbalance(cfg):
     x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
                                                                        random_state=0)
 
-    # TODO: improvement_set cannot load right/left images and crashes
     x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
     x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
 
     print("New training data set: " + str(len(x_train)) + " elements")
 
     # magic happens here
-    weights = np.array(losses)
+    if cfg.IMPROVEMENT_RATIO > 1:
+        weights = None
+    else:
+        weights = np.array(losses)
 
     name = name + '-RETRAINED-' + str(cfg.IMPROVEMENT_RATIO) + "X"
     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)

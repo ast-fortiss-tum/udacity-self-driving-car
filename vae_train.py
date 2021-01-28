@@ -46,10 +46,13 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
     x_train = shuffle(x_train, random_state=0)
     x_test = shuffle(x_test, random_state=0)
 
-    if retraining or sample_weights is not None:
-        weights = sample_weights
-    else:
-        weights = np.ones(shape=(len(x_train),))
+    # set uniform weights to all samples
+    weights = np.ones(shape=(len(x_train),))
+
+    # weighted retraining
+    if retraining:
+        if sample_weights is not None:
+            weights = sample_weights
 
     train_generator = Generator(x_train, True, cfg, weights)
     val_generator = Generator(x_test, True, cfg, weights)

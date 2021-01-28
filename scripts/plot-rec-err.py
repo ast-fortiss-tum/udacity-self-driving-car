@@ -67,6 +67,6 @@ if __name__ == '__main__':
               + cfg.SIMULATION_NAME +
               "\n# misbehaviour: %d" % times, fontsize=20)
 
-    plt.savefig('plots/rec-err.png')
+    # plt.savefig('plots/rec-err.png')
 
     plt.show()
