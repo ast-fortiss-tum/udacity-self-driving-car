@@ -91,7 +91,7 @@ def get_threshold(losses, conf_level=0.95):
     return t
 
 
-def get_scores(cfg, name, losses, new_losses, threshold):
+def get_scores(cfg, name, new_losses, losses, threshold):
     # only occurring when conditions == unexpected
     true_positive = []
     false_negative = []
@@ -232,20 +232,23 @@ def get_scores(cfg, name, losses, new_losses, threshold):
 
         return likely_false_positive_unc, likely_false_positive_cte, catastrophic_forgetting
 
-    def load_and_eval_vae(cfg, dataset, delete_cache):
-        vae, name = load_vae(cfg, load_vae_from_disk=True)
 
-        losses = load_or_compute_losses(vae, dataset, name, delete_cache)
-        threshold_nominal = get_threshold(losses, conf_level=0.95)
-        plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
-        lfp_unc, lfp_cte, _ = get_scores(cfg, name, losses, losses, threshold_nominal)
+def load_and_eval_vae(cfg, dataset, delete_cache):
+    vae, name = load_vae(cfg, load_vae_from_disk=True)
 
-    def main():
-        cfg = Config()
-        cfg.from_pyfile("config_my.py")
+    losses = load_or_compute_losses(vae, dataset, name, delete_cache)
+    threshold_nominal = get_threshold(losses, conf_level=0.95)
+    plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
+    lfp_unc, lfp_cte, _ = get_scores(cfg, name, losses, losses, threshold_nominal)
 
-        dataset = load_all_images(cfg)
-        load_and_eval_vae(cfg, dataset, delete_cache=True)
 
-    if __name__ == '__main__':
-        main()
+def main():
+    cfg = Config()
+    cfg.from_pyfile("config_my.py")
+
+    dataset = load_all_images(cfg)
+    load_and_eval_vae(cfg, dataset, delete_cache=True)
+
+
+if __name__ == '__main__':
+    main()

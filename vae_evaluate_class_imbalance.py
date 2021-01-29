@@ -37,7 +37,7 @@ def evaluate_class_imbalance(cfg):
     assert len(likely_fps_uncertainty) > 0
     assert len(likely_fps_cte) > 0
 
-    likely_fps_common = np.sort(list(set(likely_fps_uncertainty).intersection()))
+    likely_fps_common = np.sort(list(set(likely_fps_uncertainty).intersection(likely_fps_cte)))
     assert len(likely_fps_common) > 0
 
     # save the likely false positive
