@@ -31,7 +31,8 @@ def evaluate_class_imbalance(cfg):
     vae, name = load_vae(cfg, load_vae_from_disk=True)
     original_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
     threshold_nominal = get_threshold(original_losses, conf_level=0.95)
-    likely_fps_uncertainty, likely_fps_cte = get_scores(cfg, name, original_losses, threshold_nominal)
+    likely_fps_uncertainty, likely_fps_cte, _ = get_scores(cfg, name, original_losses, original_losses,
+                                                           threshold_nominal)
 
     assert len(likely_fps_uncertainty) > 0
     assert len(likely_fps_cte) > 0
@@ -113,7 +114,7 @@ def evaluate_class_imbalance(cfg):
             '''
             new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
             plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None)
-            get_scores(cfg, newname, new_losses, threshold_nominal)
+            get_scores(cfg, newname, original_losses, new_losses, threshold_nominal)
 
         ''' 
             5. load data for retraining
@@ -171,7 +172,7 @@ def evaluate_class_imbalance(cfg):
         '''
         new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
         plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None)
-        get_scores(cfg, newname, new_losses, threshold_nominal)
+        get_scores(cfg, newname, original_losses, new_losses, threshold_nominal)
 
 
 def main():
