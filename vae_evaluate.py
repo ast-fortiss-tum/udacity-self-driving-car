@@ -89,12 +89,9 @@ def get_threshold(losses, conf_level=0.95):
     t = gamma.ppf(conf_level, shape, loc=loc, scale=scale)
     print('threshold: ' + str(t))
     return t
-    # return 391.3103493443211
 
 
-def get_scores(cfg, name, losses, threshold):
-    # TODO: apply time-series analysis
-
+def get_scores(cfg, name, losses, new_losses, threshold):
     # only occurring when conditions == unexpected
     true_positive = []
     false_negative = []
@@ -199,45 +196,56 @@ def get_scores(cfg, name, losses, threshold):
     print("likely_false_positive (cte): %d" % len(likely_false_positive_cte))
     print("likely_true_negative (cte): %d" % len(likely_true_negative_cte))
 
+    # compute average catastrophic forgetting
+
+    catastrophic_forgetting = np.empty(2)
+    catastrophic_forgetting[:] = np.NaN
+    if losses != new_losses:
+        assert len(losses) == len(new_losses)
+        errors = list()
+        for idx, loss in enumerate(losses):
+            loss_original = losses[idx]
+            loss_new = new_losses[idx]
+            if loss_new > loss_original:
+                errors.append(loss_new - loss_original)
+
+        catastrophic_forgetting = list()
+        catastrophic_forgetting.append(np.mean(errors))
+        catastrophic_forgetting.append(np.std(errors))
+
+        print(
+            f"catastrophic forgetting (mean/std): {catastrophic_forgetting[0]:.2f} +- {catastrophic_forgetting[1]:.2f}")
+
     if not os.path.exists('class_imbalance.csv'):
         with open('class_imbalance.csv', mode='w', newline='') as class_imbalance_result_file:
             writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
                                 lineterminator='\n')
-            writer.writerow(["autoencoder", "fp", "lfp_unc", "lfp_cte"])
-            writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte)])
-            # class_imbalance_result_file.flush()
-            # class_imbalance_result_file.close()
+            writer.writerow(["autoencoder", "fp", "lfp_unc", "lfp_cte", "mean_CF", "std_CF"])
+            writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte),
+                             catastrophic_forgetting[0], catastrophic_forgetting[1]])
     else:
         with open('class_imbalance.csv', mode='a') as class_imbalance_result_file:
-            writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte)])
-            # class_imbalance_result_file.flush()
-            # class_imbalance_result_file.close()
+            writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+                                lineterminator='\n')
+            writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte),
+                             catastrophic_forgetting[0], catastrophic_forgetting[1]])
 
-    return likely_false_positive_unc, likely_false_positive_cte
+        return likely_false_positive_unc, likely_false_positive_cte, catastrophic_forgetting
 
+    def load_and_eval_vae(cfg, dataset, delete_cache):
+        vae, name = load_vae(cfg, load_vae_from_disk=True)
 
-def load_and_eval_vae(cfg, dataset, delete_cache):
-    vae, name = load_vae(cfg, load_vae_from_disk=True)
+        losses = load_or_compute_losses(vae, dataset, name, delete_cache)
+        threshold_nominal = get_threshold(losses, conf_level=0.95)
+        plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
+        lfp_unc, lfp_cte, _ = get_scores(cfg, name, losses, losses, threshold_nominal)
 
-    # history = np.load(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", allow_pickle=True).item()
-    # plot_history(history, cfg, name, vae)
+    def main():
+        cfg = Config()
+        cfg.from_pyfile("config_my.py")
 
-    losses = load_or_compute_losses(vae, dataset, name, delete_cache)
-    plot_reconstruction_losses(losses, None, name, get_threshold(losses, conf_level=0.95), None)
-    lfp_unc, lfp_cte = get_scores(cfg, losses, None)
+        dataset = load_all_images(cfg)
+        load_and_eval_vae(cfg, dataset, delete_cache=True)
 
-    # np.save('lfp_unc.npy', lfp_unc)
-    # np.save('lfp_cte.npy', lfp_cte)
-
-
-def main():
-    cfg = Config()
-    cfg.from_pyfile("config_my.py")
-
-    dataset = load_all_images(cfg)
-    load_and_eval_vae(cfg, dataset, delete_cache=True)
-
-
-if __name__ == '__main__':
-    main()
+    if __name__ == '__main__':
+        main()
