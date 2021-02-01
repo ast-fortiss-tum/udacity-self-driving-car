@@ -11,9 +11,9 @@ if __name__ == '__main__':
     # use_crop = [False, True]
 
     latent_space = [16]
-    loss_func = ["MSE"]
+    loss_func = ["VAE"]
     use_only_center_image = [False]
-    use_crop = [False]
+    use_crop = [True]
 
     for ld in latent_space:
         cfg.SAO_LATENT_DIM = ld

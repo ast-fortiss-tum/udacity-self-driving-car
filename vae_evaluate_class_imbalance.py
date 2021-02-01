@@ -45,7 +45,8 @@ def evaluate_class_imbalance(cfg):
     np.save('likely_false_positive_cte.npy', likely_fps_cte)
     np.save('likely_false_positive_common.npy', likely_fps_common)
 
-    for mode in ['UNC', 'CTE', 'COM']:
+    # for mode in ['UNC', 'CTE', 'COM']:
+    for mode in ['UNC', 'CTE']:
 
         if mode == 'UNC':
             lfps = likely_fps_uncertainty
@@ -75,7 +76,8 @@ def evaluate_class_imbalance(cfg):
 
         initial_improvement_set = improvement_set
 
-        for improvement_ratio in [2, 5, 10]:
+        # for improvement_ratio in [2, 5, 10]:
+        for improvement_ratio in [2]:
             print("Using improvement ratio: " + str(improvement_ratio))
             for i in range(improvement_ratio - 1):
                 temp = initial_improvement_set[:]
