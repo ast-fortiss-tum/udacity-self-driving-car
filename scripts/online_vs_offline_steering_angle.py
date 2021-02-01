@@ -8,6 +8,9 @@ from config import Config
 from utils import *
 
 if __name__ == '__main__':
+    os.chdir(os.getcwd().replace('scripts', ''))
+    print(os.getcwd())
+
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
@@ -43,9 +46,8 @@ if __name__ == '__main__':
 
         start = time.time()
         y = float(dave2.predict(image, batch_size=1))
-        duration = round(time.time() - start, 4)
-        # print("Prediction completed in %s." % str(duration))
-        total_time += duration
+
+        total_time += round(time.time() - start, 4)
 
         error = abs(online_steering_angles[i] - y)
 

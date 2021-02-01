@@ -6,9 +6,12 @@ from config import Config
 from utils import *
 from vae import normalize_and_reshape, VAE
 
-WHAT = "track1-MSEloss-latent2-centerimg-nocrop"
+ANOMALY_DETECTOR = "track1-MSEloss-latent2-centerimg-nocrop"
 
 if __name__ == '__main__':
+    os.chdir(os.getcwd().replace('scripts', ''))
+    print(os.getcwd())
+    
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
@@ -27,8 +30,8 @@ if __name__ == '__main__':
     data = data_df["center"]
     print("read %d images from file" % len(data))
 
-    encoder_mse = tensorflow.keras.models.load_model('sao/encoder-' + WHAT)
-    decoder_mse = tensorflow.keras.models.load_model('sao/decoder-' + WHAT)
+    encoder_mse = tensorflow.keras.models.load_model('sao/encoder-' + ANOMALY_DETECTOR)
+    decoder_mse = tensorflow.keras.models.load_model('sao/decoder-' + ANOMALY_DETECTOR)
     vae = VAE(model_name="encoder_mse", loss="MSE",
               latent_dim=cfg.SAO_LATENT_DIM, encoder=encoder_mse, decoder=decoder_mse)
     vae.compile(optimizer=tensorflow.keras.optimizers.Adam(learning_rate=0.0001))
@@ -61,7 +64,7 @@ if __name__ == '__main__':
 
     plt.ylabel('Loss')
     plt.xlabel('Frames')
-    plt.title("offline vs online " + WHAT)
+    plt.title("offline vs online " + ANOMALY_DETECTOR)
     plt.legend()
     plt.savefig("plots/rec-err-diff.png")
     plt.show()
