@@ -10,9 +10,9 @@ if __name__ == '__main__':
     # use_only_center_image = [True, False]
     # use_crop = [False, True]
 
-    latent_space = [2]
+    latent_space = [16]
     loss_func = ["MSE"]
-    use_only_center_image = [True]
+    use_only_center_image = [False]
     use_crop = [False]
 
     for ld in latent_space:

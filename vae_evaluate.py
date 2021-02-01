@@ -222,15 +222,17 @@ def get_scores(cfg, name, new_losses, losses, threshold):
                                 lineterminator='\n')
             writer.writerow(["autoencoder", "fp", "lfp_unc", "lfp_cte", "mean_CF", "std_CF"])
             writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte),
-                             catastrophic_forgetting[0], catastrophic_forgetting[1]])
+                             round(catastrophic_forgetting[0], 4),
+                             round(catastrophic_forgetting[1], 4)])
     else:
         with open('class_imbalance.csv', mode='a') as class_imbalance_result_file:
             writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
                                 lineterminator='\n')
             writer.writerow([name, len(false_positive), len(likely_false_positive_unc), len(likely_false_positive_cte),
-                             catastrophic_forgetting[0], catastrophic_forgetting[1]])
+                             round(catastrophic_forgetting[0], 4),
+                             round(catastrophic_forgetting[1], 4)])
 
-        return likely_false_positive_unc, likely_false_positive_cte, catastrophic_forgetting
+    return likely_false_positive_unc, likely_false_positive_cte, catastrophic_forgetting
 
 
 def load_and_eval_vae(cfg, dataset, delete_cache):

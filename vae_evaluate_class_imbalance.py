@@ -94,7 +94,7 @@ def evaluate_class_imbalance(cfg):
             '''
             weights = None
 
-            newname = name + '-classimbalance-RETRAINED-' + str(improvement_ratio) + "X-" + mode
+            newname = name + '-CI-RETRAINED-' + str(improvement_ratio) + "X-" + mode
             train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True,
                             sample_weights=weights)
 
@@ -153,7 +153,7 @@ def evaluate_class_imbalance(cfg):
         weights = np.array(original_losses)
 
         vae, name = load_vae(cfg, load_vae_from_disk=True)
-        newname = name + '-classimbalance-RETRAINED-JSEP-' + mode
+        newname = name + '-CI-RETRAINED-JSEP-' + mode
         train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
 
         encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + newname)
