@@ -8,6 +8,7 @@ import tensorflow
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
 
+from config import Config
 from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, get_driving_styles
 from vae import Encoder, Decoder, VAE
 
@@ -198,3 +199,20 @@ def load_data_for_vae_retraining(cfg, sampling):
     print("Training set: " + str(len(x_train)) + " elements")
     print("Test set: " + str(len(x_test)) + " elements")
     return x_train, x_test
+
+
+def load_vae_by_name(name):
+    cfg = Config()
+    cfg.from_pyfile("config_my.py")
+
+    encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + name)
+    decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + name)
+
+    vae = VAE(model_name=name,
+              loss=cfg.LOSS_SAO_MODEL,
+              latent_dim=cfg.SAO_LATENT_DIM,
+              encoder=encoder,
+              decoder=decoder)
+    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
+
+    return vae

@@ -5,6 +5,7 @@ import tensorflow
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
 
+import utils_vae
 from config import Config
 from utils import load_all_images
 from utils import plot_reconstruction_losses, load_improvement_set
@@ -100,16 +101,7 @@ def evaluate_class_imbalance(cfg):
             train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True,
                             sample_weights=weights)
 
-            encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + newname)
-            decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + newname)
-            print("loaded retrained VAE from disk")
-
-            vae = VAE(model_name=newname,
-                      loss=cfg.LOSS_SAO_MODEL,
-                      latent_dim=cfg.SAO_LATENT_DIM,
-                      encoder=encoder,
-                      decoder=decoder)
-            vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
+            vae = utils_vae.load_vae_by_name(newname)
 
             ''' 
                 4. evaluate retrained model (GAUSS)  
@@ -158,16 +150,7 @@ def evaluate_class_imbalance(cfg):
         newname = name + '-CI-RETRAINED-JSEP-' + mode
         train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
 
-        encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'encoder-' + newname)
-        decoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + '/' + 'decoder-' + newname)
-        print("loaded retrained VAE from disk")
-
-        vae = VAE(model_name=newname,
-                  loss=cfg.LOSS_SAO_MODEL,
-                  latent_dim=cfg.SAO_LATENT_DIM,
-                  encoder=encoder,
-                  decoder=decoder)
-        vae.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg.SAO_LEARNING_RATE))
+        vae = utils_vae.load_vae_by_name(newname)
 
         ''' 
             7. evaluate retrained (JSEP) 
