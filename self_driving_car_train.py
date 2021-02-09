@@ -118,8 +118,8 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper left')
-    plt.show()
     plt.savefig('history-training.png')
+    plt.show()
 
     if cfg.USE_PREDICTIVE_UNCERTAINTY:
         name = os.path.join(cfg.SDC_MODELS_DIR,

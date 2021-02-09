@@ -61,7 +61,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
                       validation_data=val_generator,
                       shuffle=True,
                       epochs=cfg.NUM_EPOCHS_SAO_MODEL,
-                      verbose=2)
+                      verbose=0)
 
     duration_train = time.time() - start
     print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
@@ -74,7 +74,7 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
     vae.decoder.save(my_decoder.__str__(), save_format="tf", include_optimizer=True)
 
     # save history file
-    np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
+    # np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
 
 
 def main():

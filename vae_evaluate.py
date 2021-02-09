@@ -239,7 +239,8 @@ def load_and_eval_vae(cfg, dataset, delete_cache):
     vae, name = load_vae(cfg, load_vae_from_disk=True)
 
     losses = load_or_compute_losses(vae, dataset, name, delete_cache)
-    threshold_nominal = get_threshold(losses, conf_level=0.95)
+    threshold_nominal = 731.4874919339032  # get_threshold(losses, conf_level=0.95)
+    print(threshold_nominal)
     plot_reconstruction_losses(losses, None, name, threshold_nominal, None)
     lfp_unc, lfp_cte, _ = get_scores(cfg, name, losses, losses, threshold_nominal)
 

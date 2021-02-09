@@ -8,10 +8,10 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    latent_space = [8, 16]
+    latent_space = [16]
     loss_func = ["MSE", "VAE"]
     use_only_center_image = [True, False]
-    use_crop = [False, True]
+    use_crop = [False]
 
     for ld in latent_space:
         cfg.SAO_LATENT_DIM = ld
@@ -22,19 +22,8 @@ if __name__ == '__main__':
                 for crop in use_crop:
                     cfg.USE_CROP = crop
 
-                    drive = utils.get_driving_styles(cfg)
                     x_train, x_test = load_data_for_vae_training(cfg)
 
                     vae, name = load_vae(cfg, load_vae_from_disk=False)
                     train_vae_model(cfg, vae, name, x_train, x_test, delete_model=True, retraining=False,
                                     sample_weights=None)
-
-    # for ld in latent_space:
-    #     cfg.SAO_LATENT_DIM = ld
-    #     for loss in loss_func:
-    #         cfg.LOSS_SAO_MODEL = loss
-    #         for input_image in use_only_center_image:
-    #             cfg.USE_ONLY_CENTER_IMG = input_image
-    #             for crop in use_crop:
-    #                 cfg.USE_CROP = crop
-    #                 evaluate_class_imbalance(cfg)

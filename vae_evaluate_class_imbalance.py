@@ -176,6 +176,14 @@ def evaluate_class_imbalance(cfg):
         plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None)
         get_scores(cfg, newname, original_losses, new_losses, threshold_nominal)
 
+        # remove old files
+        if os.path.exists('likely_false_positive_uncertainty.npy'):
+            os.remove('likely_false_positive_uncertainty.npy')
+        if os.path.exists('likely_false_positive_cte.npy'):
+            os.remove('likely_false_positive_cte.npy')
+        if os.path.exists('likely_false_positive_common.npy'):
+            os.remove('likely_false_positive_common.npy')
+
 
 def main():
     cfg = Config()

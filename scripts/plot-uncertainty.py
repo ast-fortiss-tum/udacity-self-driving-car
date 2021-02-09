@@ -27,7 +27,7 @@ if __name__ == '__main__':
     ewm = uncertainties.ewm(min_periods=1, alpha=ALPHA).mean()
 
     shape, loc, scale = gamma.fit(uncertainties, floc=0)
-    threshold = gamma.ppf(0.68, shape, loc=loc, scale=scale)
+    threshold = 0.00328  # gamma.ppf(0.95, shape, loc=loc, scale=scale)
     print(threshold)
     cfg.UNCERTAINTY_TOLERANCE_LEVEL = threshold
 

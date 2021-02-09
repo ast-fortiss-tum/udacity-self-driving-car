@@ -12,6 +12,8 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
+    cfg.SIMULATION_NAME = 'gauss-journal-track1-dave2-road-asphalt-dirt'
+
     plt.figure(figsize=(30, 8))
 
     path = os.path.join(cfg.TESTING_DATA_DIR,

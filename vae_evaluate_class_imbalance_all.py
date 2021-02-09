@@ -5,15 +5,12 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    # latent_space = [2]
-    # loss_func = ["MSE", "VAE"]
-    # use_only_center_image = [True, False]
-    # use_crop = [False, True]
-
     latent_space = [16]
     loss_func = ["VAE"]
     use_only_center_image = [False]
-    use_crop = [True]
+
+    use_crop = [False]
+    cfg.NUM_EPOCHS_SAO_MODEL = 50
 
     for ld in latent_space:
         cfg.SAO_LATENT_DIM = ld

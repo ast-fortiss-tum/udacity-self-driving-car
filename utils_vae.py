@@ -101,6 +101,12 @@ def load_data_for_vae_training(cfg):
     if cfg.TRACK == "track1":
         print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
         x = x[:cfg.TRACK1_IMG_PER_LAP]
+    elif cfg.TRACK == "track2":
+        print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK2_IMG_PER_LAP))
+        x = x[:cfg.TRACK2_IMG_PER_LAP]
+    elif cfg.TRACK == "track3":
+        print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK3_IMG_PER_LAP))
+        x = x[:cfg.TRACK3_IMG_PER_LAP]
     else:
         print("Incorrect cfg.TRACK option provided")
         exit()
@@ -169,6 +175,12 @@ def load_data_for_vae_retraining(cfg, sampling):
     if cfg.TRACK == "track1":
         print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK1_IMG_PER_LAP))
         x = x[:cfg.TRACK1_IMG_PER_LAP]
+    elif cfg.TRACK == "track2":
+        print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK2_IMG_PER_LAP))
+        x = x[:cfg.TRACK2_IMG_PER_LAP]
+    elif cfg.TRACK == "track3":
+        print("For %s, we use only the first %d images (~1 lap)" % (cfg.TRACK, cfg.TRACK3_IMG_PER_LAP))
+        x = x[:cfg.TRACK3_IMG_PER_LAP]
     else:
         print("Incorrect cfg.TRACK option provided")
         exit()
