@@ -314,13 +314,18 @@ def load_all_images(cfg):
     return images
 
 
-def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshold):
+def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshold, data_df):
     plt.figure(figsize=(20, 4))
     x_losses = np.arange(len(losses))
 
     x_threshold = np.arange(len(x_losses))
     y_threshold = [threshold] * len(x_threshold)
     plt.plot(x_threshold, y_threshold, '--', color='black', alpha=0.4, label='threshold')
+
+    # visualize crashes
+    crashes = data_df[data_df["crashed"] == 1]
+    is_crash = (crashes.crashed - 1) + threshold
+    plt.plot(is_crash, 'x:r', markersize=4)
 
     if new_threshold is not None:
         plt.plot(x_threshold, [new_threshold] * len(x_threshold), color='red', alpha=0.4, label='new threshold')

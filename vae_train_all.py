@@ -1,7 +1,5 @@
-import utils
 from config import Config
 from utils_vae import load_data_for_vae_training, load_vae
-from vae_evaluate_class_imbalance import evaluate_class_imbalance
 from vae_train import train_vae_model
 
 if __name__ == '__main__':
@@ -11,7 +9,9 @@ if __name__ == '__main__':
     latent_space = [16]
     loss_func = ["MSE", "VAE"]
     use_only_center_image = [True, False]
+
     use_crop = [False]
+    cfg.NUM_EPOCHS_SAO_MODEL = 100
 
     for ld in latent_space:
         cfg.SAO_LATENT_DIM = ld

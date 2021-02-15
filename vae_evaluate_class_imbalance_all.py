@@ -5,9 +5,9 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    latent_space = [16]
-    loss_func = ["VAE"]
-    use_only_center_image = [False]
+    latent_space = [4]
+    loss_func = ["MSE", "VAE"]
+    use_only_center_image = [True, False]
 
     use_crop = [False]
     cfg.NUM_EPOCHS_SAO_MODEL = 50
