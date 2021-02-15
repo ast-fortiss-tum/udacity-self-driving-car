@@ -1,17 +1,15 @@
 import os
 
 import numpy as np
-import tensorflow
+import pandas as pd
 from sklearn.model_selection import train_test_split
-from tensorflow import keras
 
 import utils_vae
 from config import Config
 from utils import load_all_images
 from utils import plot_reconstruction_losses, load_improvement_set
 from utils_vae import load_vae, load_data_for_vae_retraining
-from vae import VAE
-from vae_evaluate import load_or_compute_losses, get_threshold, get_scores
+from vae_evaluate import load_or_compute_losses, get_threshold, get_scores, get_scores_mispredictions
 from vae_train import train_vae_model
 
 
@@ -38,23 +36,16 @@ def evaluate_class_imbalance(cfg):
     assert len(likely_fps_uncertainty) > 0
     assert len(likely_fps_cte) > 0
 
-    likely_fps_common = np.sort(list(set(likely_fps_uncertainty).intersection(likely_fps_cte)))
-    assert len(likely_fps_common) > 0
-
     # save the likely false positive
     np.save('likely_false_positive_uncertainty.npy', likely_fps_uncertainty)
     np.save('likely_false_positive_cte.npy', likely_fps_cte)
-    np.save('likely_false_positive_common.npy', likely_fps_common)
 
-    # for mode in ['UNC', 'CTE', 'COM']:
     for mode in ['UNC', 'CTE']:
 
         if mode == 'UNC':
             lfps = likely_fps_uncertainty
         elif mode == 'CTE':
             lfps = likely_fps_cte
-        else:
-            lfps = likely_fps_common
 
         ''' 
             2. compute improvement set
@@ -103,11 +94,16 @@ def evaluate_class_imbalance(cfg):
 
             vae = utils_vae.load_vae_by_name(newname)
 
+            path = os.path.join(cfg.TESTING_DATA_DIR,
+                                cfg.SIMULATION_NAME,
+                                'driving_log.csv')
+            data_df = pd.read_csv(path)
+
             ''' 
                 4. evaluate retrained model (GAUSS)  
             '''
             new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
-            plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None)
+            plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None, data_df)
             get_scores(cfg, newname, original_losses, new_losses, threshold_nominal)
 
         ''' 
@@ -156,7 +152,7 @@ def evaluate_class_imbalance(cfg):
             7. evaluate retrained (JSEP) 
         '''
         new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
-        plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None)
+        plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None, data_df)
         get_scores(cfg, newname, original_losses, new_losses, threshold_nominal)
 
         # remove old files
