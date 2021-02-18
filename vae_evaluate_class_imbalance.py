@@ -12,6 +12,9 @@ from utils_vae import load_vae, load_data_for_vae_retraining
 from vae_evaluate import load_or_compute_losses, get_threshold, get_scores, get_scores_mispredictions
 from vae_train import train_vae_model
 
+from keras import backend as K
+import gc
+
 
 def evaluate_class_imbalance(cfg):
     # remove old files
@@ -39,6 +42,10 @@ def evaluate_class_imbalance(cfg):
     # save the likely false positive
     np.save('likely_false_positive_uncertainty.npy', likely_fps_uncertainty)
     np.save('likely_false_positive_cte.npy', likely_fps_cte)
+
+    del vae
+    K.clear_session()
+    gc.collect()
 
     for mode in ['UNC', 'CTE']:
 
@@ -106,6 +113,10 @@ def evaluate_class_imbalance(cfg):
             plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None, data_df)
             get_scores(cfg, newname, original_losses, new_losses, threshold_nominal)
 
+            del vae
+            K.clear_session()
+            gc.collect()
+
         ''' 
             5. load data for retraining
         '''
@@ -162,6 +173,10 @@ def evaluate_class_imbalance(cfg):
             os.remove('likely_false_positive_cte.npy')
         if os.path.exists('likely_false_positive_common.npy'):
             os.remove('likely_false_positive_common.npy')
+
+        del vae
+        K.clear_session()
+        gc.collect()
 
 
 def main():
