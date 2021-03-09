@@ -60,7 +60,7 @@ def load_vae(cfg, load_vae_from_disk):
 # TODO: unify with load_data
 def load_data_for_vae_training(cfg):
     """
-    Load training data and split it into training and validation set
+    Load training data_nominal and split it into training and validation set
     """
     drive = get_driving_styles(cfg)
 
@@ -96,7 +96,7 @@ def load_data_for_vae_training(cfg):
             continue
 
     if x is None:
-        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
+        print("No driving data_nominal were provided for training. Provide correct paths to the driving_log.csv files")
         exit()
 
     if cfg.TRACK == "track1":
@@ -130,7 +130,7 @@ def load_data_for_vae_training(cfg):
 # TODO: redundant with other similar functions
 def load_data_for_vae_retraining(cfg, sampling):
     """
-    Load training data, samples them each 15th row, and split it into training and validation set
+    Load training data_nominal, samples them each 15th row, and split it into training and validation set
     """
     drive = get_driving_styles(cfg)
 
@@ -170,7 +170,7 @@ def load_data_for_vae_retraining(cfg, sampling):
             continue
 
     if x is None:
-        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
+        print("No driving data_nominal were provided for training. Provide correct paths to the driving_log.csv files")
         exit()
 
     if cfg.TRACK == "track1":

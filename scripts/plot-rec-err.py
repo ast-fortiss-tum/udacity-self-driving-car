@@ -12,7 +12,7 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    cfg.SIMULATION_NAME = 'gauss-journal-track1-rain'
+    cfg.SIMULATION_NAME = 'gauss-journal-track3-nominal'
 
     plt.figure(figsize=(30, 8))
 

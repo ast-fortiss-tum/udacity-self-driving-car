@@ -1,7 +1,9 @@
+import gc
 import os
 
 import numpy as np
 import pandas as pd
+from keras import backend as K
 from sklearn.model_selection import train_test_split
 
 import utils_vae
@@ -9,11 +11,8 @@ from config import Config
 from utils import load_all_images
 from utils import plot_reconstruction_losses, load_improvement_set
 from utils_vae import load_vae, load_data_for_vae_retraining
-from vae_evaluate import load_or_compute_losses, get_threshold, get_scores, get_scores_mispredictions
+from vae_evaluate import load_or_compute_losses, get_threshold, get_scores
 from vae_train import train_vae_model
-
-from keras import backend as K
-import gc
 
 
 def evaluate_class_imbalance(cfg):
@@ -33,7 +32,10 @@ def evaluate_class_imbalance(cfg):
     vae, name = load_vae(cfg, load_vae_from_disk=True)
     original_losses = load_or_compute_losses(vae, dataset, name, delete_cache=True)
     threshold_nominal = get_threshold(original_losses, conf_level=0.95)
-    likely_fps_uncertainty, likely_fps_cte, _ = get_scores(cfg, name, original_losses, original_losses,
+    likely_fps_uncertainty, likely_fps_cte, _ = get_scores(cfg,
+                                                           name,
+                                                           original_losses,
+                                                           original_losses,
                                                            threshold_nominal)
 
     assert len(likely_fps_uncertainty) > 0
@@ -42,10 +44,6 @@ def evaluate_class_imbalance(cfg):
     # save the likely false positive
     np.save('likely_false_positive_uncertainty.npy', likely_fps_uncertainty)
     np.save('likely_false_positive_cte.npy', likely_fps_cte)
-
-    del vae
-    K.clear_session()
-    gc.collect()
 
     for mode in ['UNC', 'CTE']:
 
@@ -70,25 +68,25 @@ def evaluate_class_imbalance(cfg):
 
             improvement_set = improvement_set_allimg
 
-        print("Old training data set: " + str(len(x_train)) + " elements")
-        print("Improvement data set: " + str(len(improvement_set)) + " elements")
+        print("Old training data_nominal set: " + str(len(x_train)) + " elements")
+        print("Improvement data_nominal set: " + str(len(improvement_set)) + " elements")
 
         initial_improvement_set = improvement_set
 
-        # for improvement_ratio in [2, 5, 10]:
         for improvement_ratio in [2]:
             print("Using improvement ratio: " + str(improvement_ratio))
             for i in range(improvement_ratio - 1):
                 temp = initial_improvement_set[:]
                 improvement_set = np.concatenate((temp, improvement_set), axis=0)
 
-            x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
+            x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set,
+                                                                               test_size=cfg.TEST_SIZE,
                                                                                random_state=0)
 
             x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
             x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
 
-            print("New training data set: " + str(len(x_train)) + " elements")
+            print("New training data_nominal set: " + str(len(x_train)) + " elements")
 
             ''' 
                 3. retrain using GAUSS's configuration
@@ -96,7 +94,13 @@ def evaluate_class_imbalance(cfg):
             weights = None
 
             newname = name + '-CI-RETRAINED-' + str(improvement_ratio) + "X-" + mode
-            train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True,
+            train_vae_model(cfg,
+                            vae,
+                            newname,
+                            x_train,
+                            x_test,
+                            delete_model=True,
+                            retraining=True,
                             sample_weights=weights)
 
             vae = utils_vae.load_vae_by_name(newname)
@@ -113,12 +117,8 @@ def evaluate_class_imbalance(cfg):
             plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None, data_df)
             get_scores(cfg, newname, original_losses, new_losses, threshold_nominal)
 
-            del vae
-            K.clear_session()
-            gc.collect()
-
         ''' 
-            5. load data for retraining
+            5. load data_nominal for retraining
         '''
         x_train, x_test = load_data_for_vae_retraining(cfg, sampling=1)
         improvement_set = load_improvement_set(cfg, lfps)
@@ -133,15 +133,16 @@ def evaluate_class_imbalance(cfg):
 
             improvement_set = improvement_set_allimg
 
-        print("Old training data set: " + str(len(x_train)) + " elements")
-        print("Improvement data set: " + str(len(improvement_set)) + " elements")
+        print("Old training data_nominal set: " + str(len(x_train)) + " elements")
+        print("Improvement data_nominal set: " + str(len(improvement_set)) + " elements")
 
         initial_improvement_set = improvement_set
 
         temp = initial_improvement_set[:]
         improvement_set = np.concatenate((temp, improvement_set), axis=0)
 
-        x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set, test_size=cfg.TEST_SIZE,
+        x_train_improvement_set, x_test_improvement_set = train_test_split(improvement_set,
+                                                                           test_size=cfg.TEST_SIZE,
                                                                            random_state=0)
 
         x_train = np.concatenate((x_train, x_train_improvement_set), axis=0)
@@ -155,7 +156,14 @@ def evaluate_class_imbalance(cfg):
 
         vae, name = load_vae(cfg, load_vae_from_disk=True)
         newname = name + '-CI-RETRAINED-JSEP-' + mode
-        train_vae_model(cfg, vae, newname, x_train, x_test, delete_model=True, retraining=True, sample_weights=weights)
+        train_vae_model(cfg,
+                        vae,
+                        newname,
+                        x_train,
+                        x_test,
+                        delete_model=True,
+                        retraining=True,
+                        sample_weights=weights)
 
         vae = utils_vae.load_vae_by_name(newname)
 
@@ -174,7 +182,7 @@ def evaluate_class_imbalance(cfg):
         if os.path.exists('likely_false_positive_common.npy'):
             os.remove('likely_false_positive_common.npy')
 
-        del vae
+        # del vae
         K.clear_session()
         gc.collect()
 

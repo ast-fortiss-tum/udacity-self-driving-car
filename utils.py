@@ -270,13 +270,13 @@ def load_improvement_set(cfg, ids):
         print("Unable to read file %s" % path)
 
     if x is None:
-        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
+        print("No driving data_nominal were provided for training. Provide correct paths to the driving_log.csv files")
         exit()
 
     duration_train = time.time() - start
-    print("Loading improvement data set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+    print("Loading improvement data_nominal set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
-    print("False positive data set: " + str(len(x)) + " elements")
+    print("False positive data_nominal set: " + str(len(x)) + " elements")
 
     return x
 
@@ -307,7 +307,7 @@ def load_all_images(cfg):
         images[i] = image
 
     duration_train = time.time() - start
-    print("Loading data set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+    print("Loading data_nominal set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
     print("Data set: " + str(len(images)) + " elements")
 

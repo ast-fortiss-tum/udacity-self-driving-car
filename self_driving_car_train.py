@@ -21,7 +21,7 @@ np.random.seed(0)
 # TODO: a bit redundant w/ load_data_for_vae but this one loads y as well
 def load_data(cfg):
     """
-    Load training data and split it into training and validation set
+    Load training data_nominal and split it into training and validation set
     """
     drive = get_driving_styles(cfg)
 
@@ -56,7 +56,7 @@ def load_data(cfg):
             continue
 
     if x is None:
-        print("No driving data were provided for training. Provide correct paths to the driving_log.csv files")
+        print("No driving data_nominal were provided for training. Provide correct paths to the driving_log.csv files")
         exit()
 
     try:
@@ -133,7 +133,7 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
 
 def main():
     """
-    Load train/validation data set and train the model
+    Load train/validation data_nominal set and train the model
     """
     cfg = Config()
     cfg.from_pyfile("config_my.py")

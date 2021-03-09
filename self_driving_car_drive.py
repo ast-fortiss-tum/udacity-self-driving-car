@@ -112,7 +112,7 @@ def telemetry(sid, data):
 
             if cfg.USE_PREDICTIVE_UNCERTAINTY:
 
-                # take batch of data
+                # take batch of data_nominal
                 x = np.array([image for idx in range(batch_size)])
 
                 # save predictions from a sample pass

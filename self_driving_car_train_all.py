@@ -9,7 +9,7 @@ np.random.seed(0)
 
 def main():
     """
-    Load train/validation data set and train the model
+    Load train/validation data_nominal set and train the model
     """
     cfg = Config()
     cfg.from_pyfile("config_my.py")

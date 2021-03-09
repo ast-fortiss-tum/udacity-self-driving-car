@@ -5,7 +5,7 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    tracks = ["-track1", "-track2", "-track3"]
+    tracks = ["track3"]  #, "track2", "track3"]
     conditions = ["-rain"]
 
     latent_space = [2, 4, 8, 16]
