@@ -224,7 +224,7 @@ def get_results_mispredictions(cfg, sim_name, name,
                 if crashed_mean == 0:
                     false_positive_windows += 1
                     prediction.extend([1] * fps_nominal)
-                    print("window [%d - %d]" % (idx - fps_nominal, idx))
+                    # print("window [%d - %d]" % (idx - fps_nominal, idx))
                 else:
                     raise ValueError
 
