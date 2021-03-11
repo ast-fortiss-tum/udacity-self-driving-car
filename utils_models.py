@@ -1,3 +1,9 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 from tensorflow import keras
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Lambda, Conv2D, Dropout, Flatten, Dense
@@ -7,15 +13,15 @@ from utils import INPUT_SHAPE
 
 
 def build_model(model_name, use_dropout=False):
+    """
+    Retrieve the DAVE-2 NVIDIA model
+    """
     model = None
     if "dave2" in model_name:
         model = create_dave2_model(use_dropout)
-    elif "chauffeur" in model_name:
-        model = create_chauffeur_model(use_dropout)
-    elif "epoch" in model_name:
-        model = create_epoch_model(use_dropout)
-    elif "commaai" in model_name:
-        model = create_commaai_model(use_dropout)
+    else:
+        print("Incorrect model name provided")
+        exit()
 
     assert model is not None
     model.summary()
@@ -51,6 +57,9 @@ def create_dave2_model(use_dropout=False):
         outputs = keras.layers.Dense(1)(x)
         model = keras.Model(inputs=inputs, outputs=outputs)
     else:
+        """
+        original NVIDIA model w/out Dropout layers
+        """
         model = Sequential()
         model.add(Lambda(lambda x: x / 127.5 - 1.0, input_shape=INPUT_SHAPE))
         model.add(Conv2D(24, (5, 5), activation='elu', strides=(2, 2)))
@@ -66,15 +75,3 @@ def create_dave2_model(use_dropout=False):
         model.add(Dense(1))
 
     return model
-
-
-def create_chauffeur_model(use_dropout=False):
-    return None
-
-
-def create_epoch_model(use_dropout=False):
-    return None
-
-
-def create_commaai_model(use_dropout=False):
-    return None

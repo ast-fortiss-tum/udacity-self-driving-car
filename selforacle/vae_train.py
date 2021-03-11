@@ -1,14 +1,19 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import datetime
 import os
 import shutil
 import time
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.utils import shuffle
 
 from config import Config
-from utils import plot_history
 from utils_vae import load_vae, load_data_for_vae_training
 from vae_batch_generator import Generator
 
@@ -66,18 +71,25 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
     duration_train = time.time() - start
     print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
 
-    # plot_history(history.history, cfg, vae)
+    # Plot the autoencoder training history
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_total_loss'])
+    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
+    plt.xlabel('epoch')
+    plt.title('training-' + str(vae.model_name))
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
+    plt.show()
 
-    # save the last model (might not be the best)
+    # save the last model
     vae.encoder.save(my_encoder.__str__(), save_format="tf", include_optimizer=True)
-
     vae.decoder.save(my_decoder.__str__(), save_format="tf", include_optimizer=True)
-
-    # save history file
-    # np.save(Path(os.path.join(cfg.SAO_MODELS_DIR, name)).__str__() + ".npy", history.history)
 
 
 def main():
+    os.chdir(os.getcwd().replace('selforacle', ''))
+    print(os.getcwd())
+
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 

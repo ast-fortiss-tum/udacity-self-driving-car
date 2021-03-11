@@ -1,3 +1,9 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import tensorflow
 from scipy.stats import ttest_rel
 from tqdm import tqdm
@@ -5,7 +11,7 @@ from tqdm import tqdm
 import utils
 from config import Config
 from utils import *
-from vae import normalize_and_reshape, VAE
+from selforacle.vae import normalize_and_reshape, VAE
 
 WHAT = '-latent16-centerimg-nocrop'
 

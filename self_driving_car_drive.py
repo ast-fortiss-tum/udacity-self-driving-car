@@ -1,3 +1,10 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# Code adapted from https://github.com/naokishibuya/car-behavioral-cloning
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import base64
 import logging
 import os
@@ -29,7 +36,7 @@ from io import BytesIO
 
 from tensorflow.keras.models import load_model
 from utils import rmse, crop, resize
-from vae import VAE, normalize_and_reshape
+from selforacle.vae import VAE, normalize_and_reshape
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -90,21 +97,20 @@ def telemetry(sid, data):
             image.save(image_path)
 
         try:
-            image = np.asarray(image)  # from PIL image to numpy array
+            # from PIL image to numpy array
+            image = np.asarray(image)
+
+            # get the loss
             image_copy = np.copy(image)
-
-            if cfg.USE_CROP:
-                image_copy = crop(image_copy)
-
             image_copy = resize(image_copy)
             image_copy = normalize_and_reshape(image_copy)
             loss = anomaly_detection.test_on_batch(image_copy)[2]
 
-            image = utils.preprocess(image)  # apply the pre-processing
+            # apply the pre-processing
+            image = utils.preprocess(image)
 
-            # image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT), cv2.INTER_AREA)
-
-            image = np.array([image])  # the model expects 4D array
+            # the model expects 4D array
+            image = np.array([image])
 
             global steering_angle
             global uncertainty
@@ -118,9 +124,10 @@ def telemetry(sid, data):
                 # save predictions from a sample pass
                 outputs = model.predict_on_batch(x)
 
-                # average over all passes if the final steering angle
+                # average over all passes is the final steering angle
                 steering_angle = outputs.mean(axis=0)[0]
-                # evaluate against labels
+
+                # variance of predictions gives the uncertainty
                 uncertainty = outputs.var(axis=0)[0]
             else:
                 steering_angle = float(model.predict(image, batch_size=1))
@@ -147,7 +154,7 @@ def telemetry(sid, data):
             global frame_id
 
             send_control(steering_angle, throttle, confidence, loss, cfg.MAX_LAPS, uncertainty)
-            
+
             if cfg.TESTING_DATA_DIR:
                 csv_path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME)
                 utils.write_csv_line(csv_path,
@@ -205,8 +212,10 @@ if __name__ == '__main__':
         exit()
 
     # load the self-assessment oracle model
-    encoder = tensorflow.keras.models.load_model('sao/' + 'encoder-' + cfg.ANOMALY_DETECTOR_NAME)
-    decoder = tensorflow.keras.models.load_model('sao/' + 'decoder-' + cfg.ANOMALY_DETECTOR_NAME)
+    encoder = tensorflow.keras.models.load_model(
+        cfg.SAO_MODELS_DIR + os.path.sep + 'encoder-' + cfg.ANOMALY_DETECTOR_NAME)
+    decoder = tensorflow.keras.models.load_model(
+        cfg.SAO_MODELS_DIR + os.path.sep + 'decoder-' + cfg.ANOMALY_DETECTOR_NAME)
 
     anomaly_detection = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
                             loss=cfg.LOSS_SAO_MODEL,

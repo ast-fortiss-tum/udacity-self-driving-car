@@ -1,10 +1,16 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import gc
 import os
 
 import pandas as pd
 from keras import backend as K
 
-import utils_vae
+from selforacle import utils_vae
 from config import Config
 from utils import load_all_images
 from vae_evaluate import load_or_compute_losses, get_results_mispredictions

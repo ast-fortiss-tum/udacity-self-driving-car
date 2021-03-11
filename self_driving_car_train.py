@@ -1,3 +1,10 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# Code adapted from https://github.com/naokishibuya/car-behavioral-cloning
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import datetime
 import os
 import time
@@ -76,7 +83,7 @@ def load_data(cfg):
 
 def train_model(model, cfg, x_train, x_test, y_train, y_test):
     """
-    Train the model
+    Train the self-driving car model
     """
     if cfg.USE_PREDICTIVE_UNCERTAINTY:
         name = os.path.join(cfg.SDC_MODELS_DIR,
@@ -118,7 +125,6 @@ def train_model(model, cfg, x_train, x_test, y_train, y_test):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper left')
-    plt.savefig('history-training.png')
     plt.show()
 
     if cfg.USE_PREDICTIVE_UNCERTAINTY:

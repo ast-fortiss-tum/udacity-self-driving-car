@@ -1,3 +1,9 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 from abc import ABC
 
 import tensorflow as tf
@@ -16,7 +22,6 @@ class Sampling(layers.Layer):
         z_mean, z_log_var = inputs
         batch = tf.shape(z_mean)[0]
         dim = tf.shape(z_mean)[1]
-        # TODO: stddev=0.1 for repair
         epsilon = tf.keras.backend.random_normal(shape=(batch, dim),
                                                  mean=0.0, stddev=1.0)
         return z_mean + tf.exp(0.5 * z_log_var) * epsilon
@@ -51,8 +56,10 @@ class Decoder(layers.Layer):
         return decoder
 
 
-# Define the VAE as a `Model` with a custom `train_step`
 class VAE(keras.Model, ABC):
+    '''
+    Define the VAE as a `Model` with a custom `train_step`
+    '''
     def __init__(self, model_name, loss, latent_dim, encoder, decoder, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.model_name = model_name

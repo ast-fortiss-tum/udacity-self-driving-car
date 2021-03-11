@@ -1,3 +1,9 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import csv
 import datetime
 import os
@@ -29,7 +35,7 @@ def load_image(data_dir, image_file):
     """
     Load RGB images from a file
     """
-    image_dir = 'datasets/' + data_dir
+    image_dir = data_dir
     local_path = "/".join(image_file.split("/")[-4:-1]) + "/" + image_file.split("/")[-1]
     img_path = "{0}/{1}".format(image_dir, local_path)
     try:
@@ -184,6 +190,9 @@ def write_csv_line(filename, row):
 
 
 def create_csv_results_file_header(file_name, fieldnames):
+    """
+    Creates the folder to store the driving simulation data from the Udacity simulator
+    """
     if file_name is not None:
         file_name += "/driving_log.csv"
         with open(file_name, mode='w', newline='') as result_file:
@@ -197,6 +206,9 @@ def create_csv_results_file_header(file_name, fieldnames):
 
 
 def create_output_dir(cfg, fieldnames):
+    """
+    Creates the folder to store the driving simulation data from the Udacity simulator
+    """
     path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, "IMG")
     csv_path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME)
 
@@ -209,7 +221,10 @@ def create_output_dir(cfg, fieldnames):
     create_csv_results_file_header(csv_path, fieldnames)
 
 
-def load_driving_data(cfg: object) -> object:
+def load_driving_data_log(cfg: object) -> object:
+    """
+    Retrieves the driving data log from cfg.SIMULATION_NAME
+    """
     path = None
     data_df = None
     try:
@@ -223,6 +238,9 @@ def load_driving_data(cfg: object) -> object:
 
 
 def get_driving_styles(cfg):
+    """
+    Retrieves the driving styles to compose the training set
+    """
     if cfg.TRACK == "track1":
         return cfg.TRACK1_DRIVING_STYLES
     elif cfg.TRACK == "track2":
@@ -234,19 +252,11 @@ def get_driving_styles(cfg):
         exit(1)
 
 
-def plot_history(history, cfg, vae):
-    plt.plot(history['loss'])
-    plt.plot(history['val_total_loss'])
-    plt.ylabel('reconstruction loss (' + str(cfg.LOSS_SAO_MODEL) + ')')
-    plt.xlabel('epoch')
-    plt.title('training-' + str(vae.model_name))
-    plt.legend(['train', 'val'], loc='upper left')
-    plt.savefig('plots/history-training-' + str(vae.model_name) + '.png')
-
-    plt.show()
-
-
 def load_improvement_set(cfg, ids):
+    """
+    Load the paths to the images in the cfg.SIMULATION_NAME directory.
+    Filters those having a frame id in the set ids.
+    """
     start = time.time()
 
     x = None
@@ -274,15 +284,18 @@ def load_improvement_set(cfg, ids):
         exit()
 
     duration_train = time.time() - start
-    print("Loading improvement data_nominal set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+    print("Loading improvement data_nominal set completed in %s." % str(
+        datetime.timedelta(seconds=round(duration_train))))
 
     print("False positive data_nominal set: " + str(len(x)) + " elements")
 
     return x
 
 
-# load the paths to the images in the cfg.SIMULATION_NAME directory
 def load_all_images(cfg):
+    """
+    Load the actual images (not the paths!) in the cfg.SIMULATION_NAME directory.
+    """
     path = os.path.join(cfg.TESTING_DATA_DIR,
                         cfg.SIMULATION_NAME,
                         'driving_log.csv')
@@ -315,6 +328,10 @@ def load_all_images(cfg):
 
 
 def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshold, data_df):
+    """
+    Plots the reconstruction errors for one or two sets of losses, along with given thresholds.
+    Crashes are visualized in red.
+    """
     plt.figure(figsize=(20, 4))
     x_losses = np.arange(len(losses))
 
@@ -345,4 +362,7 @@ def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshol
 
 
 def laplacian_variance(images):
+    """
+    Computes the Laplacian variance for the given list of images
+    """
     return [cv2.Laplacian(image, cv2.CV_32F).var() for image in images]

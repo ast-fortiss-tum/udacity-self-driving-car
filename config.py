@@ -1,6 +1,9 @@
-"""
-@author: astocco
-"""
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import os
 import types
 
@@ -28,8 +31,6 @@ class Config:
         self.SDC_MODELS_DIR = None
         self.SDC_MODEL_NAME = None
         self.TRACK = None
-        self.USE_CROP = None
-        self.USE_ONLY_CENTER_IMG = None
         self.LOSS_SAO_MODEL = None
 
     def from_pyfile(self, filename, silent=False):

@@ -1,12 +1,18 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 from config import Config
-from utils_vae import load_data_for_vae_training, load_vae
-from vae_train import train_vae_model
+from selforacle.utils_vae import load_data_for_vae_training, load_vae
+from selforacle.vae_train import train_vae_model
 
 if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    tracks = ["track1"]  #, "track2", "track3"]
+    tracks = ["track1"]  # , "track2", "track3"]
 
     latent_space = [2, 4, 8, 16]
     loss_func = ["MSE", "VAE"]

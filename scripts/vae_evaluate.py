@@ -1,3 +1,9 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import csv
 import os
 
@@ -13,8 +19,8 @@ import utils
 from config import Config
 from utils import load_all_images
 from utils import plot_reconstruction_losses
-from utils_vae import load_vae
-from vae import normalize_and_reshape, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
+from selforacle.utils_vae import load_vae
+from selforacle.vae import normalize_and_reshape, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
 
 np.random.seed(0)
 
@@ -23,7 +29,7 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
     losses = []
 
     current_path = os.getcwd()
-    cache_path = os.path.join(current_path, 'cache', cached_file_name + '.npy')
+    cache_path = os.path.join(current_path, '../cache', cached_file_name + '.npy')
 
     if delete_cache:
         if os.path.exists(cache_path):
@@ -47,7 +53,6 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
             # decoded = anomaly_detector.decoder.predict(z)
             # reconstructed = anomaly_detector.predict(x)
 
-            # TODO: check the index
             loss = anomaly_detector.test_on_batch(x)[1]  # total loss
             losses.append(loss)
 
@@ -468,7 +473,6 @@ def load_and_eval_vae(cfg, dataset, delete_cache):
 
     losses = load_or_compute_losses(vae, dataset, name, delete_cache)
     threshold_nominal = get_threshold(losses, conf_level=0.95)
-    print(threshold_nominal)
     plot_reconstruction_losses(losses, None, name, threshold_nominal, None, None)
     lfp_unc, lfp_cte, _ = get_scores(cfg, name, losses, losses, threshold_nominal)
 

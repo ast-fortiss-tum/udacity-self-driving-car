@@ -1,3 +1,9 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
 import gc
 import os
 
@@ -6,13 +12,13 @@ import pandas as pd
 from keras import backend as K
 from sklearn.model_selection import train_test_split
 
-import utils_vae
+from selforacle import utils_vae
 from config import Config
 from utils import load_all_images
 from utils import plot_reconstruction_losses, load_improvement_set
-from utils_vae import load_vae, load_data_for_vae_retraining
+from selforacle.utils_vae import load_vae, load_data_for_vae_training
 from vae_evaluate import load_or_compute_losses, get_threshold, get_scores
-from vae_train import train_vae_model
+from selforacle.vae_train import train_vae_model
 
 
 def evaluate_class_imbalance(cfg):
@@ -55,18 +61,8 @@ def evaluate_class_imbalance(cfg):
         ''' 
             2. compute improvement set
         '''
-        x_train, x_test = load_data_for_vae_retraining(cfg, sampling=15)
+        x_train, x_test = load_data_for_vae_training(cfg, sampling=15)
         improvement_set = load_improvement_set(cfg, lfps)
-
-        # when using center/left/right images, I have to create 3d arrays
-        if cfg.USE_ONLY_CENTER_IMG is False:
-            improvement_set_allimg = x_train[:len(improvement_set)]
-            for i in range(len(improvement_set)):
-                improvement_set_allimg[i][0] = improvement_set[i][0]
-                improvement_set_allimg[i][1] = improvement_set[i][0]
-                improvement_set_allimg[i][2] = improvement_set[i][0]
-
-            improvement_set = improvement_set_allimg
 
         print("Old training data_nominal set: " + str(len(x_train)) + " elements")
         print("Improvement data_nominal set: " + str(len(improvement_set)) + " elements")
@@ -89,11 +85,11 @@ def evaluate_class_imbalance(cfg):
             print("New training data_nominal set: " + str(len(x_train)) + " elements")
 
             ''' 
-                3. retrain using GAUSS's configuration
+                3. retrain using RDR's configuration
             '''
             weights = None
 
-            newname = name + '-CI-RETRAINED-' + str(improvement_ratio) + "X-" + mode
+            newname = name + '-CI-RETRAINED-RDR' + str(improvement_ratio) + "X-" + mode
             train_vae_model(cfg,
                             vae,
                             newname,
@@ -111,7 +107,7 @@ def evaluate_class_imbalance(cfg):
             data_df = pd.read_csv(path)
 
             ''' 
-                4. evaluate retrained model (GAUSS)  
+                4. evaluate retrained model (RDR)  
             '''
             new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
             plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None, data_df)
@@ -120,18 +116,8 @@ def evaluate_class_imbalance(cfg):
         ''' 
             5. load data_nominal for retraining
         '''
-        x_train, x_test = load_data_for_vae_retraining(cfg, sampling=1)
+        x_train, x_test = load_data_for_vae_training(cfg, sampling=1)
         improvement_set = load_improvement_set(cfg, lfps)
-
-        # when using center/left/right images, I have to create 3d arrays
-        if cfg.USE_ONLY_CENTER_IMG is False:
-            improvement_set_allimg = x_train[:len(improvement_set)]
-            for i in range(len(improvement_set)):
-                improvement_set_allimg[i][0] = improvement_set[i][0]
-                improvement_set_allimg[i][1] = improvement_set[i][0]
-                improvement_set_allimg[i][2] = improvement_set[i][0]
-
-            improvement_set = improvement_set_allimg
 
         print("Old training data_nominal set: " + str(len(x_train)) + " elements")
         print("Improvement data_nominal set: " + str(len(improvement_set)) + " elements")
@@ -149,13 +135,13 @@ def evaluate_class_imbalance(cfg):
         x_test = np.concatenate((x_test, x_test_improvement_set), axis=0)
 
         ''' 
-            6. retrain using JSEP's configuration
+            6. retrain using CWR's configuration
         '''
-        # magic happens here
+        # weights the frame using the reconstruction loss
         weights = np.array(original_losses)
 
         vae, name = load_vae(cfg, load_vae_from_disk=True)
-        newname = name + '-CI-RETRAINED-JSEP-' + mode
+        newname = name + '-CI-RETRAINED-CWR-' + mode
         train_vae_model(cfg,
                         vae,
                         newname,
@@ -168,7 +154,7 @@ def evaluate_class_imbalance(cfg):
         vae = utils_vae.load_vae_by_name(newname)
 
         ''' 
-            7. evaluate retrained (JSEP) 
+            7. evaluate retrained (CWR) 
         '''
         new_losses = load_or_compute_losses(vae, dataset, newname, delete_cache=True)
         plot_reconstruction_losses(original_losses, new_losses, newname, threshold_nominal, None, data_df)

@@ -1,3 +1,11 @@
+# Copyright 2021 by Andrea Stocco, the Software Institute at USI.
+# All rights reserved.
+# This file is part of the project SelfOracle, a misbehaviour predictor for autonomous vehicles,
+# developed within the ERC project PRECRIME.
+# and is released under the "MIT License Agreement". Please see the LICENSE
+# file that should have been included as part of this package.
+import os
+
 import numpy as np
 from tensorflow.keras.utils import Sequence
 
@@ -26,9 +34,10 @@ class Generator(Sequence):
 
             # augmentation
             if self.is_training and np.random.rand() < 0.6:
-                image, steering_angle = augment(self.cfg.TRAINING_SET_DIR, center, left, right, steering_angle)
+                image, steering_angle = augment(self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR,
+                                                center, left, right, steering_angle)
             else:
-                image = load_image(self.cfg.TRAINING_SET_DIR, center)
+                image = load_image(self.cfg.TRAINING_DATA_DIR + os.path.sep + self.cfg.TRAINING_SET_DIR, center)
 
             # add the image and steering angle to the batch
             images[i] = preprocess(image)
