@@ -32,11 +32,9 @@ def evaluate_novelty_detection(cfg, track, condition, metric, technique):
     data_df_nominal = pd.read_csv(path)
 
     if cfg.USE_ONLY_CENTER_IMG:
-        name = cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + "-latent" + str(cfg.SAO_LATENT_DIM) \
-               + '-centerimg-' + 'nocrop' + technique + metric
+        name = cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + "-latent" + str(cfg.SAO_LATENT_DIM) + technique + metric
     else:
-        name = cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + "-latent" + str(cfg.SAO_LATENT_DIM) \
-               + '-allimg-' + 'nocrop' + technique + metric
+        name = cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + "-latent" + str(cfg.SAO_LATENT_DIM) + technique + metric
 
     vae = utils_vae.load_vae_by_name(name)
 
@@ -67,6 +65,9 @@ def evaluate_novelty_detection(cfg, track, condition, metric, technique):
 
 
 def main():
+    os.chdir(os.getcwd().replace('scripts', ''))
+    print(os.getcwd())
+
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 

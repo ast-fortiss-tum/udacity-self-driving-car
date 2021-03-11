@@ -11,6 +11,7 @@ import types
 class Config:
 
     def __init__(self):
+        self.SAO_MODELS_DIR = None
         self.CTE_TOLERANCE_LEVEL = None
         self.FPS = None
         self.UNCERTAINTY_TOLERANCE_LEVEL = None

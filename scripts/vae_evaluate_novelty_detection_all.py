@@ -4,10 +4,15 @@
 # developed within the ERC project PRECRIME.
 # and is released under the "MIT License Agreement". Please see the LICENSE
 # file that should have been included as part of this package.
+import os
+
 from config import Config
 from vae_evaluate_novelty_detection import evaluate_novelty_detection
 
 if __name__ == '__main__':
+    os.chdir(os.getcwd().replace('scripts', ''))
+    print(os.getcwd())
+
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
@@ -17,7 +22,7 @@ if __name__ == '__main__':
     latent_space = [2, 4, 8, 16]
     loss_func = ["MSE", "VAE"]
     infieldmetrics = ["-UNC", "-CTE"]
-    techniques = ["-CI-RDR-2X", "-CI-RETRAINED-CWR"]
+    techniques = ["-RDR-2X", "-CWR"]
 
     for t in tracks:
         cfg.TRACK = t

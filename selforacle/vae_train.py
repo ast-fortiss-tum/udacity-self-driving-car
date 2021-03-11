@@ -6,16 +6,19 @@
 # file that should have been included as part of this package.
 import datetime
 import os
+import gc
 import shutil
 import time
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+from keras import backend as K
 from sklearn.utils import shuffle
 
 from config import Config
-from utils_vae import load_vae, load_data_for_vae_training
-from vae_batch_generator import Generator
+from selforacle.utils_vae import load_vae, load_data_for_vae_training
+from selforacle.vae_batch_generator import Generator
 
 
 def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, sample_weights):
@@ -84,6 +87,10 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
     # save the last model
     vae.encoder.save(my_encoder.__str__(), save_format="tf", include_optimizer=True)
     vae.decoder.save(my_decoder.__str__(), save_format="tf", include_optimizer=True)
+
+    del vae
+    K.clear_session()
+    gc.collect()
 
 
 def main():

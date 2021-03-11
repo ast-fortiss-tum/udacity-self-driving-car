@@ -14,16 +14,16 @@ import tensorflow
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
 
+from selforacle.vae import Encoder, Decoder, VAE
 from config import Config
 from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, get_driving_styles
-from vae import Encoder, Decoder, VAE
 
 
 def load_vae(cfg, load_vae_from_disk):
     """
     Load a trained VAE from disk and compile it, or creates a new one to be trained.
     """
-    name = cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + 'loss' + "-latent" + str(cfg.SAO_LATENT_DIM)
+    name = cfg.TRACK + '-' + cfg.LOSS_SAO_MODEL + "-latent" + str(cfg.SAO_LATENT_DIM)
 
     if load_vae_from_disk:
         encoder = tensorflow.keras.models.load_model(cfg.SAO_MODELS_DIR + os.path.sep + 'encoder-' + name)
@@ -44,7 +44,7 @@ def load_vae(cfg, load_vae_from_disk):
     return vae, name
 
 
-def load_data_for_vae_training(cfg):
+def load_data_for_vae_training(cfg, sampling=None):
     """
     Load training data_nominal and split it into training and validation set
     Load only the first lap for each track
@@ -68,6 +68,11 @@ def load_data_for_vae_training(cfg):
                                 drive_style,
                                 'driving_log.csv')
             data_df = pd.read_csv(path)
+
+            if sampling is not None:
+                print("sampling every " + str(sampling) + "th frame")
+                data_df = data_df[data_df.index % sampling == 0]
+
             if x is None:
                 x = data_df[['center']].values
             else:

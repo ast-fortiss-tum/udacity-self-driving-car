@@ -89,7 +89,7 @@ def evaluate_class_imbalance(cfg):
             '''
             weights = None
 
-            newname = name + '-CI-RETRAINED-RDR' + str(improvement_ratio) + "X-" + mode
+            newname = name + '-RDR-' + str(improvement_ratio) + "X-" + mode
             train_vae_model(cfg,
                             vae,
                             newname,
@@ -141,7 +141,7 @@ def evaluate_class_imbalance(cfg):
         weights = np.array(original_losses)
 
         vae, name = load_vae(cfg, load_vae_from_disk=True)
-        newname = name + '-CI-RETRAINED-CWR-' + mode
+        newname = name + '-CWR-' + mode
         train_vae_model(cfg,
                         vae,
                         newname,
@@ -174,6 +174,9 @@ def evaluate_class_imbalance(cfg):
 
 
 def main():
+    os.chdir(os.getcwd().replace('script', ''))
+    print(os.getcwd())
+
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 

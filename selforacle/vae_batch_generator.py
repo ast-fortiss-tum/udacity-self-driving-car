@@ -10,7 +10,7 @@ import numpy as np
 from tensorflow.keras.utils import Sequence
 import os
 from utils import RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS, resize, crop
-from vae import normalize_and_reshape
+from selforacle.vae import normalize_and_reshape
 
 
 class Generator(Sequence):
