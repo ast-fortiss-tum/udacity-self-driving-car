@@ -31,7 +31,7 @@ LEARNING_RATE = 1.0e-4  # amount that the weights are updated during training
 USE_PREDICTIVE_UNCERTAINTY = True  # use MC-Dropout model
 
 # Udacity simulation settings
-ANOMALY_DETECTOR_NAME = "track1-MSEloss-latent2"
+ANOMALY_DETECTOR_NAME = "track1-MSE-latent2"
 SIMULATION_NAME = "track1-sunny"
 TESTING_DATA_DIR = "simulations"  # Udacity simulations logs
 MAX_SPEED = 30  # car's max speed, capped at 35 mph (default)
@@ -43,9 +43,7 @@ FPS = 15
 # autoencoder-based self-assessment oracle settings
 NUM_EPOCHS_SAO_MODEL = 10  # training epochs for the autoencoder-based self-assessment oracle
 SAO_LATENT_DIM = 2  # dimension of the latent space
-USE_ONLY_CENTER_IMG = True  # train the autoencoder-based self-assessment oracle only using front-facing camera images
-USE_CROP = False  # crop the images the same way as the car
-LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based sel f-assessment oracle
+LOSS_SAO_MODEL = "MSE"  # "VAE"|"MSE" objective function for the autoencoder-based self-assessment oracle
 # DO NOT TOUCH THESE
 SAO_BATCH_SIZE = 128
 SAO_LEARNING_RATE = 0.0001
