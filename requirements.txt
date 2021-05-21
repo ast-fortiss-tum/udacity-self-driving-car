@@ -1,7 +1,7 @@
 matplotlib
 numpy==1.16.0
 pandas
-tensorflow==1.14.0
+tensorflow==2.5.0
 keras==2.2.4
 scikit-learn
 opencv-python
