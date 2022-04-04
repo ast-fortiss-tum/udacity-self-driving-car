@@ -11,7 +11,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-import tensorflow
 from tensorflow import keras
 
 import utils
@@ -35,7 +34,7 @@ from flask import Flask
 from io import BytesIO
 
 from tensorflow.keras.models import load_model
-from utils import rmse, crop, resize
+from utils import rmse, resize
 from selforacle.vae import VAE, normalize_and_reshape
 
 sio = socketio.Server()
@@ -46,7 +45,6 @@ prev_image_array = None
 anomaly_detection = None
 autoenconder_model = None
 frame_id = 0
-batch_size = 128
 uncertainty = -1
 
 
@@ -66,14 +64,12 @@ def telemetry(sid, data):
 
         # brake
         brake = float(data["brake"])
-        # print("brake: %.2f" % brake)
 
         # the distance driven by the car
         distance = float(data["distance"])
 
         # the time driven by the car
         sim_time = int(data["sim_time"])
-        # print(sim_time)
 
         # the angular difference
         ang_diff = float(data["ang_diff"])
@@ -81,7 +77,7 @@ def telemetry(sid, data):
         # whether an OBE or crash occurred
         isCrash = int(data["crash"])
 
-        # the total number of OBEs and crashes so far
+        # the total number of OBEs and crashes
         number_obe = int(data["tot_obes"])
         number_crashes = int(data["tot_crashes"])
 
@@ -114,12 +110,11 @@ def telemetry(sid, data):
 
             global steering_angle
             global uncertainty
-            global batch_size
 
             if cfg.USE_PREDICTIVE_UNCERTAINTY:
 
-                # take batch of data_nominal
-                x = np.array([image for idx in range(batch_size)])
+                # take batch of data
+                x = np.array([image for idx in range(cfg.NUM_SAMPLES_MC_DROPOUT)])
 
                 # save predictions from a sample pass
                 outputs = model.predict_on_batch(x)
@@ -131,11 +126,12 @@ def telemetry(sid, data):
                 uncertainty = outputs.var(axis=0)[0]
             else:
                 steering_angle = float(model.predict(image, batch_size=1))
+                print(steering_angle)
 
             # lower the throttle as the speed increases
             # if the speed is above the current speed limit, we are on a downhill.
             # make sure we slow down first and then go back to the original max speed.
-            global speed_limit
+            speed_limit = cfg.MAX_SPEED
 
             if speed > speed_limit:
                 speed_limit = cfg.MIN_SPEED  # slow down
@@ -198,8 +194,6 @@ if __name__ == '__main__':
 
     cfg = Config()
     cfg.from_pyfile("config_my.py")
-
-    speed_limit = cfg.MAX_SPEED
 
     # load the self-driving car model
     model_path = Path(os.path.join(cfg.SDC_MODELS_DIR, cfg.SDC_MODEL_NAME))
