@@ -15,11 +15,13 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tensorflow
 from tensorflow.keras import backend as K
+
+from config import Config
 
 RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH = 80, 160
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3
-# INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 INPUT_SHAPE = (RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS)
 
 csv_fieldnames_original_simulator = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
@@ -63,7 +65,6 @@ def rgb2yuv(image):
     """
     Convert the image from RGB to YUV (This is what the NVIDIA model does)
     """
-    # return cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
     return cv2.cvtColor(image.astype('uint8') * 255, cv2.COLOR_RGB2YUV)
 
 
@@ -312,7 +313,7 @@ def load_all_images(cfg):
     for i, path in enumerate(x):
         image = mpimg.imread(path)  # load center images
 
-        # visualize whether the input_image image as expected
+        # visualize the input_image image
         # import matplotlib.pyplot as plt
         # plt.imshow(image)
         # plt.show()
@@ -366,3 +367,16 @@ def laplacian_variance(images):
     Computes the Laplacian variance for the given list of images
     """
     return [cv2.Laplacian(image, cv2.CV_32F).var() for image in images]
+
+
+def load_autoencoder_from_disk():
+    cfg = Config()
+    cfg.from_pyfile("config_my.py")
+
+    encoder = tensorflow.keras.models.load_model(
+        cfg.SAO_MODELS_DIR + os.path.sep + 'encoder-' + cfg.ANOMALY_DETECTOR_NAME)
+    decoder = tensorflow.keras.models.load_model(
+        cfg.SAO_MODELS_DIR + os.path.sep + 'decoder-' + cfg.ANOMALY_DETECTOR_NAME)
+
+    # TODO: manage the case in which the files do not exist
+    return encoder, decoder

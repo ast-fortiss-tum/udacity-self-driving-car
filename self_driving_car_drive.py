@@ -206,10 +206,7 @@ if __name__ == '__main__':
         exit()
 
     # load the self-assessment oracle model
-    encoder = tensorflow.keras.models.load_model(
-        cfg.SAO_MODELS_DIR + os.path.sep + 'encoder-' + cfg.ANOMALY_DETECTOR_NAME)
-    decoder = tensorflow.keras.models.load_model(
-        cfg.SAO_MODELS_DIR + os.path.sep + 'decoder-' + cfg.ANOMALY_DETECTOR_NAME)
+    encoder, decoder = utils.load_autoencoder_from_disk()
 
     anomaly_detection = VAE(model_name=cfg.ANOMALY_DETECTOR_NAME,
                             loss=cfg.LOSS_SAO_MODEL,
