@@ -1,4 +1,4 @@
-name: correctenv
+name: udacity-self-driving-car
 channels:
   - conda-forge
   - defaults
@@ -23,4 +23,4 @@ dependencies:
     - python-socketio==4.5.1
     - python-engineio==3.11.2
     - h5py==2.10.0
-prefix: /opt/anaconda3/envs/correctenv
+prefix: /opt/anaconda3/envs/udacity-self-driving-car
