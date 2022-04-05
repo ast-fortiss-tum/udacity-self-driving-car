@@ -4,20 +4,17 @@
 # developed within the ERC project PRECRIME.
 # and is released under the "MIT License Agreement". Please see the LICENSE
 # file that should have been included as part of this package.
-import tensorflow
 from scipy.stats import stats
 
 import utils
-from config import Config
-from utils import *
 from selforacle.vae import normalize_and_reshape, VAE
+from utils import *
 
-ANOMALY_DETECTOR = "track1-MSEloss-latent2-centerimg-nocrop"
+ANOMALY_DETECTOR = "track1-MSEloss-latent2"
 
 if __name__ == '__main__':
-    os.chdir(os.getcwd().replace('scripts', ''))
-    print(os.getcwd())
-    
+    os.chdir(os.getcwd().replace('scripts/plotting', ''))
+
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 

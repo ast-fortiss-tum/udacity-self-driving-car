@@ -8,12 +8,10 @@ import glob
 
 from scipy.stats import gamma
 
-from config import Config
 from utils import *
 
 if __name__ == '__main__':
-    os.chdir(os.getcwd().replace('scripts', ''))
-    print(os.getcwd())
+    os.chdir(os.getcwd().replace('scripts/plotting', ''))
 
     cfg = Config()
     cfg.from_pyfile("config_my.py")

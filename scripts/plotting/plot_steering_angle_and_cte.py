@@ -4,23 +4,14 @@
 # developed within the ERC project PRECRIME.
 # and is released under the "MIT License Agreement". Please see the LICENSE
 # file that should have been included as part of this package.
-from pathlib import Path
 
-import tensorflow
-from scipy.stats import stats
-
-import utils
-from config import Config
 from utils import *
 
 if __name__ == '__main__':
-    os.chdir(os.getcwd().replace('scripts', ''))
-    print(os.getcwd())
+    os.chdir(os.getcwd().replace('scripts/plotting', ''))
 
     cfg = Config()
     cfg.from_pyfile("config_my.py")
-
-    cfg.SIMULATION_NAME = 'gauss-journal-track1-nominal'
 
     print("Script to compare offline vs online (within Udacity's) uncertainty values")
 
@@ -50,8 +41,8 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(center_images[min_idx_unc]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("min uncertainty (steering angle=%s, CTE=%s)" % (round(online_steering_angles[min_idx_unc], 5),
-                                                               round(online_uncertainty[min_idx_unc], 2)),
+    plt.title("min CTE (steering angle=%s, CTE=%s)" % (round(online_steering_angles[min_idx_unc], 5),
+                                                       round(online_uncertainty[min_idx_unc], 2)),
               fontsize=50)
 
     # display reconstruction
@@ -59,8 +50,8 @@ if __name__ == '__main__':
     plt.imshow(mpimg.imread(center_images[max_idx_unc]).reshape(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.title("max uncertainty (steering angle=%s, CTE=%s)" % (round(online_steering_angles[max_idx_unc], 5),
-                                                               round(online_uncertainty[max_idx_unc], 2)),
+    plt.title("max CTE (steering angle=%s, CTE=%s)" % (round(online_steering_angles[max_idx_unc], 5),
+                                                       round(online_uncertainty[max_idx_unc], 2)),
               fontsize=50)
 
     plt.savefig("plots/steering-cte.png")

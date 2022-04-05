@@ -19,8 +19,7 @@ def score_when_decrease(output):
 
 
 if __name__ == '__main__':
-    os.chdir(os.getcwd().replace('scripts', ''))
-    print(os.getcwd())
+    os.chdir(os.getcwd().replace('scripts/plotting', ''))
 
     cfg = Config()
     cfg.from_pyfile("config_my.py")
