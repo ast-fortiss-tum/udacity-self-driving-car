@@ -126,7 +126,6 @@ def telemetry(sid, data):
                 uncertainty = outputs.var(axis=0)[0]
             else:
                 steering_angle = float(model.predict(image, batch_size=1))
-                print(steering_angle)
 
             # lower the throttle as the speed increases
             # if the speed is above the current speed limit, we are on a downhill.

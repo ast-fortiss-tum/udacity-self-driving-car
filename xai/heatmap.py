@@ -6,6 +6,7 @@
 # file that should have been included as part of this package.
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 from tf_keras_vis.saliency import Saliency
 from tqdm import tqdm
 
@@ -17,7 +18,7 @@ def score_when_decrease(output):
     return -1.0 * output[:, 0]
 
 
-def compute_heatmap(simulation_name=None, attention_type="SmoothGrad"):
+def compute_heatmap(cfg, simulation_name=None, attention_type="SmoothGrad"):
     if simulation_name is None:
         simulation_name = cfg.SIMULATION_NAME
 
@@ -30,9 +31,11 @@ def compute_heatmap(simulation_name=None, attention_type="SmoothGrad"):
     data_df = pd.read_csv(path)
     data = data_df["center"]
     print("read %d images from file" % len(data))
+
     # load self-driving car model
     self_driving_car_model = tensorflow.keras.models.load_model(
         Path(os.path.join(cfg.SDC_MODELS_DIR, cfg.SDC_MODEL_NAME)))
+
     # load attention model
     saliency = None
     if attention_type == "SmoothGrad":
@@ -42,9 +45,10 @@ def compute_heatmap(simulation_name=None, attention_type="SmoothGrad"):
     list_of_image_paths = []
     total_time = 0
     prev_hm = gradient = np.zeros((80, 160))
+
     # create directory for the heatmaps
     path_save_heatmaps = os.path.join(cfg.TESTING_DATA_DIR,
-                                      cfg.SIMULATION_NAME,
+                                      simulation_name,
                                       "heatmaps-" + attention_type.lower(),
                                       "IMG")
     if os.path.exists(path_save_heatmaps):
@@ -52,6 +56,7 @@ def compute_heatmap(simulation_name=None, attention_type="SmoothGrad"):
         shutil.rmtree(path_save_heatmaps)
     print("Creating image folder at {}".format(path_save_heatmaps))
     os.makedirs(path_save_heatmaps)
+
     for idx, img in enumerate(tqdm(data)):
 
         # convert Windows path, if needed
@@ -90,37 +95,60 @@ def compute_heatmap(simulation_name=None, attention_type="SmoothGrad"):
 
         avg_heatmaps.append(average)
         avg_gradient_heatmaps.append(average_gradient)
-    # save scores
+
+    # save scores as numpy arrays
     file_name = "htm-" + attention_type.lower() + '-scores'
     path_name = os.path.join(cfg.TESTING_DATA_DIR,
-                             cfg.SIMULATION_NAME,
+                             simulation_name,
                              file_name + '-avg')
     np.save(path_name, avg_heatmaps)
+
+    # plot scores as histograms
+    plt.hist(avg_heatmaps)
+    plt.title("average attention heatmaps")
     path_name = os.path.join(cfg.TESTING_DATA_DIR,
-                             cfg.SIMULATION_NAME,
+                             simulation_name,
+                             'plot-' + file_name + '-avg.png')
+    plt.savefig(path_name)
+    plt.show()
+
+    path_name = os.path.join(cfg.TESTING_DATA_DIR,
+                             simulation_name,
                              file_name + '-avg-grad')
-    np.save(path_name, avg_heatmaps)
+    np.save(path_name, avg_gradient_heatmaps)
+
+    plt.clf()
+    plt.hist(avg_gradient_heatmaps)
+    plt.title("average gradient attention heatmaps")
+    path_name = os.path.join(cfg.TESTING_DATA_DIR,
+                             simulation_name,
+                             'plot-' + file_name + '-avg-grad.png')
+    plt.savefig(path_name)
+    plt.show()
+
     # save as csv
     df = pd.DataFrame(list_of_image_paths, columns=['center'])
     path = os.path.join(cfg.TESTING_DATA_DIR,
-                        cfg.SIMULATION_NAME,
+                        simulation_name,
                         'driving_log.csv')
     data_df = pd.read_csv(path)
     data = data_df[["frameId", "time", "crashed"]]
+
     # copy frame id, simulation time and crashed information from simulation's csv
     df['frameId'] = data['frameId'].copy()
     df['time'] = data['time'].copy()
     df['crashed'] = data['crashed'].copy()
+
     # save it as a separate csv
     df.to_csv(os.path.join(cfg.TESTING_DATA_DIR,
-                           cfg.SIMULATION_NAME,
+                           simulation_name,
                            "heatmaps-" + attention_type.lower(),
                            'driving_log.csv'), index=False)
 
 
 if __name__ == '__main__':
     '''
-    Given a simulation  by Udacity, the script reads the corresponding image paths from the csv and creates a heatmap for
+    Given a simulation by Udacity, the script reads the corresponding image paths from the csv and creates a heatmap for
     each driving image. The heatmap is created with the SmoothGrad algorithm available from tf-keras-vis 
     (https://keisen.github.io/tf-keras-vis-docs/examples/attentions.html#SmoothGrad). The scripts generates a separate 
     IMG/ folder and csv file.
@@ -133,4 +161,7 @@ if __name__ == '__main__':
 
     attention = "SmoothGrad"
 
-    compute_heatmap(simulation_name=None, attention_type=attention)
+    cfg.SDC_MODEL_NAME = "track1-dave2-uncropped-mc-034.h5"
+    cfg.SIMULATION_NAME = "gauss-journal-track1-nominal"
+
+    compute_heatmap(cfg=cfg, simulation_name=None, attention_type=attention)

@@ -47,6 +47,7 @@ if __name__ == '__main__':
     plt.xticks(
         np.arange(0, len(uncertainties) + 1, cfg.FPS),
         labels=range(0, len(uncertainties) // cfg.FPS + 1))
+    plt.xticks(rotation=90)
 
     plt.plot(x_threshold, y_threshold, color='red', alpha=0.2)
     plt.plot(x_losses, uncertainties, '--', color='black', alpha=0.4, label="original")

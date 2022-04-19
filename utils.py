@@ -293,6 +293,47 @@ def load_improvement_set(cfg, ids):
     return x
 
 
+# copy of load_all_images for loading the heatmaps
+def load_all_heatmaps(cfg):
+    """
+    Load the actual heatmaps (not the paths!)
+    """
+    path = os.path.join(cfg.TESTING_DATA_DIR,
+                        cfg.SIMULATION_NAME,
+                        'heatmaps-smoothgrad',
+                        'driving_log.csv')
+    data_df = pd.read_csv(path)
+
+    x = data_df["center"]
+    print("read %d images from directory %s" % (len(x), path))
+
+    start = time.time()
+
+    # load the images
+    images = np.empty([len(x), RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS])
+
+    for i, path in enumerate(x):
+        try:
+            image = mpimg.imread(path)  # load center images
+        except FileNotFoundError:
+            path = path.replace('\\', '/')
+            image = mpimg.imread(path)
+
+        # visualize the input_image image
+        # import matplotlib.pyplot as plt
+        # plt.imshow(image)
+        # plt.show()
+
+        images[i] = image
+
+    duration_train = time.time() - start
+    print("Loading data_nominal set completed in %s." % str(datetime.timedelta(seconds=round(duration_train))))
+
+    print("Data set: " + str(len(images)) + " elements")
+
+    return images
+
+
 def load_all_images(cfg):
     """
     Load the actual images (not the paths!) in the cfg.SIMULATION_NAME directory.
@@ -303,7 +344,7 @@ def load_all_images(cfg):
     data_df = pd.read_csv(path)
 
     x = data_df["center"]
-    print("read %d images from directory %s" % (len(x), cfg.SIMULATION_NAME))
+    print("read %d images from directory %s" % (len(x), path))
 
     start = time.time()
 
@@ -341,9 +382,12 @@ def plot_reconstruction_losses(losses, new_losses, name, threshold, new_threshol
     plt.plot(x_threshold, y_threshold, '--', color='black', alpha=0.4, label='threshold')
 
     # visualize crashes
-    crashes = data_df[data_df["crashed"] == 1]
-    is_crash = (crashes.crashed - 1) + threshold
-    plt.plot(is_crash, 'x:r', markersize=4)
+    try:
+        crashes = data_df[data_df["crashed"] == 1]
+        is_crash = (crashes.crashed - 1) + threshold
+        plt.plot(is_crash, 'x:r', markersize=4)
+    except KeyError:
+        print("crashed column not present in the csv")
 
     if new_threshold is not None:
         plt.plot(x_threshold, [new_threshold] * len(x_threshold), color='red', alpha=0.4, label='new threshold')

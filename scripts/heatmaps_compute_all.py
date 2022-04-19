@@ -20,4 +20,4 @@ if __name__ == '__main__':
     simulations = glob.glob('simulations/*')
 
     for sim in simulations:
-        compute_heatmap(simulation_name=sim)
+        compute_heatmap(cfg, simulation_name=sim)

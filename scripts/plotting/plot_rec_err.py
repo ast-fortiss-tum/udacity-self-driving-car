@@ -16,30 +16,29 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    cfg.SIMULATION_NAME = 'gauss-journal-track3-nominal'
-
-    plt.figure(figsize=(30, 8))
-
     path = os.path.join(cfg.TESTING_DATA_DIR,
-                        cfg.SIMULATION_NAME,
-                        'IMG')
+                        'gauss-journal-track1-nominal',
+                        'driving_log.csv')
 
-    all_imgs = glob.glob(path + "/*.jpg")
+    data_df = pd.read_csv(path)
+    all_err = data_df.loc[data_df['waypoint'] > 0]['loss']
+
+    shape, loc, scale = gamma.fit(all_err, floc=0)
+    threshold = gamma.ppf(0.95, shape, loc=loc, scale=scale)
+    print(threshold)
+
+    cfg.SIMULATION_NAME = 'xai-track1-rain-10'
 
     path = os.path.join(cfg.TESTING_DATA_DIR,
                         cfg.SIMULATION_NAME,
                         'driving_log.csv')
     data_df = pd.read_csv(path)
-    all_err = data_df['loss']
+    all_err = data_df.loc[data_df['waypoint'] > 0]['loss']
 
-    WINDOW = 15
+    WINDOW = cfg.FPS
     ALPHA = 0.2
     sma = all_err.rolling(WINDOW, min_periods=1).mean()
     ewm = all_err.ewm(min_periods=1, alpha=ALPHA).mean()
-
-    shape, loc, scale = gamma.fit(all_err, floc=0)
-    threshold = gamma.ppf(0.68, shape, loc=loc, scale=scale)
-    print(threshold)
 
     # count how many mis-behaviours
     a = pd.Series(ewm)
@@ -51,10 +50,13 @@ if __name__ == '__main__':
     x_threshold = np.arange(len(all_err))
     y_threshold = [threshold] * len(x_threshold)
 
+    plt.figure(figsize=(30, 8))
+
     # changes the frequency of the ticks on the X-axis to simulation's seconds
     plt.xticks(
         np.arange(0, len(all_err) + 1, cfg.FPS),
         labels=range(0, len(all_err) // cfg.FPS + 1))
+    plt.xticks(rotation=90)
 
     # visualize crashes
     crashes = data_df[data_df["crashed"] == 1]

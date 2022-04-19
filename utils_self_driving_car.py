@@ -12,7 +12,7 @@ ORIGINAL_IMAGE_HEIGHT, ORIGINAL_IMAGE_WIDTH, ORIGINAL_IMAGE_CHANNELS = 160, 320,
 
 # IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3 # use this for ICSE's ADs
 # IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 80, 160, 3 # use this for ICSE's ADs
-IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3 # use this for adaptive's ADs
+IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 160, 320, 3  # use this for adaptive's ADs
 
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
@@ -39,6 +39,7 @@ def randBright(image, br=0.25):
     rand_image[:, :, 2] = rand_image[:, :, 2] * rand_bright
     rand_image = cv2.cvtColor(rand_image, cv2.COLOR_HSV2RGB)
     return rand_image
+
 
 # Functions to read and preprocess images
 def readProcess(image_file):
@@ -72,7 +73,7 @@ def load_driving_data(args):
     for track in tracks:
         for drive_style in drive:
             try:
-                df = pd.read_csv(os.path.join(args.data_dir, track, drive_style, 'driving_log.csv'), index_col = False)
+                df = pd.read_csv(os.path.join(args.data_dir, track, drive_style, 'driving_log.csv'), index_col=False)
                 if x is None:
                     x = df[['center', 'left', 'right']].values
                     y = df['steering'].values
@@ -122,7 +123,7 @@ def load_driving_data(args):
     for im in df_train.image_path:
         image = load_image(args.data_dir, im)
         X_train.append(image)
-        #X_train.append(readProcess(im))
+        # X_train.append(readProcess(im))
     X_train = np.asarray(X_train)
     y_train = np.array(df_train.steering, dtype=np.float32)
 
@@ -175,6 +176,8 @@ def load_data(args):
 """
 Load data for a specific track, creates overlapping sequences, and split them into training and validation set
 """
+
+
 def load_track_data(args, track, seq_len):
     """
     Load training data and split it into training and validation set
@@ -387,6 +390,7 @@ def random_brightness(image):
     hsv[:, :, 2] = hsv[:, :, 2] * ratio
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
+
 def augment_single(center, steering_angle, range_x=100, range_y=10):
     """
     Generate an augmented image and adjust steering angle.
@@ -397,6 +401,7 @@ def augment_single(center, steering_angle, range_x=100, range_y=10):
     image = random_shadow(image)
     image = random_brightness(image)
     return image, steering_angle
+
 
 def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=10):
     """
@@ -414,6 +419,8 @@ def augment(data_dir, center, left, right, steering_angle, range_x=100, range_y=
 '''
 Does not seems to be used
 '''
+
+
 def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training):
     """
     Generate training image give image paths and associated steering angles
@@ -438,20 +445,23 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
                 break
         yield images, steers
 
+
 def rmse(y_true, y_pred):
     '''
     Calculates RMSE
     '''
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
+
 def load_simulation_data(args: object, filename) -> object:
     try:
-        #path = os.path.join(args.data_dir, filename)
+        # path = os.path.join(args.data_dir, filename)
 
-        data_df = pd.read_csv(filename, keep_default_na=False, names = ["frameId", "model", "anomaly_detector", "threshold", "sim_name",
-              "lap", "waypoint", "loss", "cte", "steering_angle", "throttle",
-              "brake", "speed", "crashed", "center", "tot_OBEs",
-              "tot_crashes"])
+        data_df = pd.read_csv(filename, keep_default_na=False,
+                              names=["frameId", "model", "anomaly_detector", "threshold", "sim_name",
+                                     "lap", "waypoint", "loss", "cte", "steering_angle", "throttle",
+                                     "brake", "speed", "crashed", "center", "tot_OBEs",
+                                     "tot_crashes"])
     except FileNotFoundError:
         print("Unable to read file %s" % filename)
         exit()

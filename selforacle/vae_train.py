@@ -95,7 +95,6 @@ def train_vae_model(cfg, vae, name, x_train, x_test, delete_model, retraining, s
 
 def main():
     os.chdir(os.getcwd().replace('selforacle', ''))
-    print(os.getcwd())
 
     cfg = Config()
     cfg.from_pyfile("config_my.py")
