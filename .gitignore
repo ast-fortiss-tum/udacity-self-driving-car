@@ -25,3 +25,4 @@ likely_false_positive_uncertainty.npy
 novelty_detection*.csv
 class_imbalance*.csv
 
+failure_prediction_heatmaps.csv
