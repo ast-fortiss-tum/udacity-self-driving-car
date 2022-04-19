@@ -6,6 +6,7 @@
 # file that should have been included as part of this package.
 import csv
 import gc
+import math
 import os
 
 import matplotlib.pyplot as plt
@@ -13,8 +14,6 @@ import numpy as np
 import pandas as pd
 from keras import backend as K
 from scipy.stats import gamma
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_curve, roc_auc_score, precision_recall_curve, \
-    auc
 from tqdm import tqdm
 
 import utils
@@ -36,15 +35,15 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
     if delete_cache:
         if os.path.exists(cache_path):
             os.remove(cache_path)
-            print("delete_cache=true. Removed losses cache file " + cached_file_name)
+            print("delete_cache = True. Removed losses cache file " + cached_file_name)
 
     try:
         losses = np.load(cache_path)
         losses = losses.tolist()
-        print("Found losses data_nominal for " + cached_file_name)
+        print("Found losses for " + cached_file_name)
         return losses
     except FileNotFoundError:
-        print("Losses data_nominal for " + cached_file_name + " not found. Computing...")
+        print("Losses for " + cached_file_name + " not found. Computing...")
 
         for x in tqdm(dataset):
             x = utils.resize(x)
@@ -60,7 +59,7 @@ def load_or_compute_losses(anomaly_detector, dataset, cached_file_name, delete_c
 
         np_losses = np.array(losses)
         np.save(cache_path, np_losses)
-        print("Losses data_nominal for " + cached_file_name + " saved.")
+        print("Losses for " + cached_file_name + " saved.")
 
     return losses
 
@@ -92,234 +91,203 @@ def get_results_mispredictions(cfg, sim_name, name,
                                losses_on_nominal, losses_on_anomalous,
                                data_df_nominal, data_df_anomalous,
                                seconds_to_anticipate):
+    false_positive_windows, true_negative_windows, threshold = compute_fp_and_tn(data_df_nominal,
+                                                                                 losses_on_nominal)
+
+    true_positive_windows, false_negative_windows = compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold,
+                                                                      seconds_to_anticipate)
+
+    print("time to misbehaviour (s): %d" % seconds_to_anticipate)
+
+    true_positive_windows = 5 * true_positive_windows
+    false_negative_windows = 5 * false_negative_windows
+
+    precision = true_positive_windows / (true_positive_windows + false_positive_windows)
+    recall = true_positive_windows / (true_positive_windows + false_negative_windows)
+    f1 = (2 * precision * recall) / (precision + recall)
+
+    mcc = (true_positive_windows * true_negative_windows - false_positive_windows * false_negative_windows) / \
+          (math.sqrt(
+              (true_positive_windows + false_positive_windows) *
+              (true_positive_windows + false_negative_windows) *
+              (true_negative_windows + false_positive_windows) *
+              (true_negative_windows + false_negative_windows)))
+
+    print("Precision: " + str(round(precision * 100)) + "%")
+    print("Recall: " + str(round(recall * 100)) + "%")
+    print("F-1: " + str(round(f1 * 100)) + "%")
+    print("MCC: " + str(round(mcc)))
+
+    # if not os.path.exists('failure_prediction_heatmaps.csv'):
+    #     with open('failure_prediction_heatmaps.csv', mode='w', newline='') as class_imbalance_result_file:
+    #         writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+    #                             lineterminator='\n')
+    #         writer.writerow(
+    #             ["simulation", "autoencoder", "ttd", "precision", "recall", "f1", "auc", "aucprc"])
+    #
+    #         writer.writerow([sim_name, name, seconds_to_anticipate,
+    #                          str(round(precision_score(crashed, prediction) * 100, 1)),
+    #                          str(round(recall_score(crashed, prediction) * 100, 1)),
+    #                          str(round(f1_score(crashed, prediction) * 100, 1)),
+    #                          str(round(roc_auc_score(crashed, prediction), 3)),
+    #                          str(round(auc_score, 3))])
+    #
+    # else:
+    #     with open('failure_prediction_heatmaps.csv', mode='a') as novelty_detection_result_file:
+    #         writer = csv.writer(novelty_detection_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+    #                             lineterminator='\n')
+    #         writer.writerow([sim_name, name, seconds_to_anticipate,
+    #                          str(round(precision_score(crashed, prediction) * 100, 1)),
+    #                          str(round(recall_score(crashed, prediction) * 100, 1)),
+    #                          str(round(f1_score(crashed, prediction) * 100, 1)),
+    #                          str(round(roc_auc_score(crashed, prediction), 3)),
+    #                          str(round(auc_score, 3))])
+    #         if seconds_to_anticipate == 3:
+    #             writer.writerow(["", "", "", "", "", "", "", ""])
+
+
+def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds_to_anticipate):
+    print("time to misbehaviour (s): %d" % seconds_to_anticipate)
+
     # only occurring when conditions == unexpected
     true_positive_windows = 0
     false_negative_windows = 0
 
-    # only occurring when conditions == nominal
-    false_positive_windows = 0
-    true_negative_windows = 0
-
-    # get threshold on nominal data_nominal
-    threshold = get_threshold(losses_on_nominal, conf_level=0.95)
-
     ''' 
-    prepare dataset to get TP and FN from unexpected
-    '''
+        prepare dataset to get TP and FN from unexpected
+        '''
     number_frames_anomalous = pd.Series.max(data_df_anomalous['frameId'])
     simulation_time_anomalous = pd.Series.max(data_df_anomalous['time'])
     fps_anomalous = number_frames_anomalous // simulation_time_anomalous
 
     crashed_anomalous = data_df_anomalous['crashed']
     crashed_anomalous.is_copy = None
+    crashed_anomalous_in_anomalous_conditions = crashed_anomalous.copy()
 
     # creates the ground truth
     all_first_frame_position_crashed_sequences = []
-    for idx, item in enumerate(crashed_anomalous):
+    for idx, item in enumerate(crashed_anomalous_in_anomalous_conditions):
         if idx == number_frames_anomalous:
             continue
 
-        if crashed_anomalous[idx] == 0 and crashed_anomalous[idx + 1] == 1:
+        if crashed_anomalous_in_anomalous_conditions[idx] == 0 and crashed_anomalous_in_anomalous_conditions[
+            idx + 1] == 1:
             first_index_crash = idx + 1
             all_first_frame_position_crashed_sequences.append(first_index_crash)
             print("first_index_crash: %d" % first_index_crash)
 
-    print("identified %d crash sequences" % len(all_first_frame_position_crashed_sequences))
+    print("identified %d crash(es)" % len(all_first_frame_position_crashed_sequences))
     print(all_first_frame_position_crashed_sequences)
+    frames_to_reassign = fps_anomalous * seconds_to_anticipate  # start of the sequence
 
-    frames_to_reassign = fps_anomalous * seconds_to_anticipate
+    # frames_to_reassign_2 = 1  # fps_anomalous * (seconds_to_anticipate - 1)  # end of the sequence
+    frames_to_reassign_2 = fps_anomalous * (seconds_to_anticipate - 1)  # end of the sequence
 
     reaction_frames = pd.Series()
     for item in all_first_frame_position_crashed_sequences:
-        crashed_anomalous.loc[[item - frames_to_reassign, item]] = 1
-        reaction_frames = reaction_frames.append(crashed_anomalous[item - frames_to_reassign:item])
+        crashed_anomalous_in_anomalous_conditions.loc[item - frames_to_reassign: item - frames_to_reassign_2] = 1
+        reaction_frames = reaction_frames.append(
+            crashed_anomalous_in_anomalous_conditions[item - frames_to_reassign: item - frames_to_reassign_2])
 
-        print("frames between %d and %d have been labelled as 1" % (item - frames_to_reassign, item))
-        print("reaction frames size %d" % len(reaction_frames))
+        print("frames between %d and %d have been labelled as 1" % (
+            item - frames_to_reassign, item - frames_to_reassign_2))
+        print("reaction frames size is %d" % len(reaction_frames))
 
+    crashed_anomalous_in_anomalous_conditions = reaction_frames
+    num_windows_anomalous = len(crashed_anomalous_in_anomalous_conditions) // fps_anomalous
     sma_anomalous = pd.Series(losses_on_anomalous)
-    # sma_anomalous = losses.rolling(fps_anomalous, min_periods=1).mean()
-
-    # iterate over losses_on_anomalous and crashed_anomalous jointly and remove frames labelled as 0
-    assert len(sma_anomalous) == len(crashed_anomalous)
-    idx_to_remove = []
-    for idx, loss in enumerate(sma_anomalous):
-        if crashed_anomalous[idx] == 0:
-            idx_to_remove.append(idx)
-
-    crashed_anomalous = crashed_anomalous.drop(crashed_anomalous.index[idx_to_remove])
-    sma_anomalous = sma_anomalous.drop(sma_anomalous.index[idx_to_remove])
-    num_windows_anomalous = len(crashed_anomalous) // fps_anomalous
-    frames_to_remove = (len(crashed_anomalous) - (fps_anomalous * num_windows_anomalous)) - 1
-    crashed_anomalous = crashed_anomalous[:-frames_to_remove]
-    sma_anomalous = sma_anomalous[:-frames_to_remove]
-    assert len(crashed_anomalous) == len(sma_anomalous)
-
+    sma_anomalous = sma_anomalous.iloc[reaction_frames.index.to_list()]
+    assert len(crashed_anomalous_in_anomalous_conditions) == len(sma_anomalous)
     prediction = []
 
-    for idx, loss in enumerate(sma_anomalous):
-        # print("idx %d" % idx)
+    # window_mean = sma_anomalous.max()
+    window_mean = sma_anomalous.mean()
 
-        if idx != 0 and idx % fps_anomalous == 0:
+    crashed_mean = crashed_anomalous_in_anomalous_conditions.mean()
+    print(sma_anomalous.mean(), sma_anomalous.max())
 
-            # print("window [%d - %d]" % (idx - fps_anomalous, idx))
+    if window_mean >= threshold:
+        if crashed_mean > 0:
+            true_positive_windows += 1
+            prediction.extend([1] * fps_anomalous)
+        else:
+            raise ValueError
 
-            window_mean = pd.Series(sma_anomalous.iloc[idx - fps_anomalous:idx]).mean()
-            crashed_mean = pd.Series(crashed_anomalous[idx - fps_anomalous:idx]).mean()
+    elif window_mean < threshold:
+        if crashed_mean > 0:
+            false_negative_windows += 1
+            prediction.extend([0] * fps_anomalous)
+        else:
+            raise ValueError
+    print("true positives: %d - false negatives: %d" % (true_positive_windows, false_negative_windows))
 
-            if window_mean >= threshold:
-                if crashed_mean > 0:
-                    true_positive_windows += 1
-                    prediction.extend([1] * fps_anomalous)
-                else:
-                    raise ValueError
+    return true_positive_windows, false_negative_windows
 
-            elif window_mean < threshold:
-                if crashed_mean > 0:
-                    false_negative_windows += 1
-                    prediction.extend([0] * fps_anomalous)
-                else:
-                    raise ValueError
 
-            # print("true positives: %d - false negatives: %d" % (true_positive_windows, false_negative_windows))
+def compute_fp_and_tn(data_df_nominal):
+    # when conditions == nominal I count only FP and TN
+    false_positive_windows = 0
+    true_negative_windows = 0
 
-    assert false_negative_windows + true_positive_windows == num_windows_anomalous
-    crashed_anomalous = crashed_anomalous[:-1]
-    sma_anomalous = sma_anomalous[:-1]
+    losses = data_df_nominal['loss'].tolist()
+    # losses = losses[:500]
 
-    assert len(prediction) == len(crashed_anomalous) == len(sma_anomalous)
+    # get threshold on nominal data_nominal
+    threshold = get_threshold(losses, conf_level=0.95)
 
-    '''
-        prepare dataset to get FP and TN from unexpected
-    '''
     number_frames_nominal = pd.Series.max(data_df_nominal['frameId'])
     simulation_time_nominal = pd.Series.max(data_df_nominal['time'])
     fps_nominal = number_frames_nominal // simulation_time_nominal
 
-    crashed_nominal = data_df_nominal['crashed']
-    crashed_nominal.is_copy = None
+    num_windows_nominal = len(data_df_nominal) // fps_nominal
+    if len(data_df_nominal) % fps_nominal != 0:
+        num_to_delete = len(data_df_nominal) - (num_windows_nominal * fps_nominal) - 1
+        data_df_nominal = data_df_nominal[:-num_to_delete]
 
-    num_windows_nominal = len(crashed_nominal) // fps_nominal
-    num_to_delete = len(crashed_nominal) - (num_windows_nominal * fps_nominal) - 1
-
-    crashed_nominal = crashed_nominal[:-num_to_delete]
-    losses_nominal = losses_on_nominal[:-num_to_delete]
-    assert len(crashed_nominal) == len(losses_nominal)
-
-    losses = pd.Series(losses_nominal)
+    losses = pd.Series(data_df_nominal['loss'])
     sma_nominal = losses.rolling(fps_nominal, min_periods=1).mean()
-
-    assert len(crashed_nominal) == len(losses) == len(sma_nominal)
 
     for idx, loss in enumerate(sma_nominal):
 
-        if idx != 0 and idx % fps_nominal == 0:
+        if idx > 0 and idx % fps_nominal == 0:
 
             # print("window [%d - %d]" % (idx - fps_nominal, idx))
 
             window_mean = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
-            crashed_mean = pd.Series(crashed_nominal[idx - fps_nominal:idx]).mean()
 
             if window_mean >= threshold:
-                if crashed_mean == 0:
-                    false_positive_windows += 1
-                    prediction.extend([1] * fps_nominal)
-                    # print("window [%d - %d]" % (idx - fps_nominal, idx))
-                else:
-                    raise ValueError
-
+                false_positive_windows += 1
             elif window_mean < threshold:
-                if crashed_mean == 0:
-                    true_negative_windows += 1
-                    prediction.extend([0] * fps_nominal)
-                    # print("prediction size %d" % len(prediction))
-                else:
-                    raise ValueError
+                true_negative_windows += 1
+        elif idx == len(sma_nominal) - 1:
+
+            # print("window [%d - %d]" % (idx - fps_nominal, idx))
+
+            window_mean = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
+
+            if window_mean >= threshold:
+                false_positive_windows += 1
+            elif window_mean < threshold:
+                true_negative_windows += 1
 
     print("false positives: %d - true negatives: %d" % (false_positive_windows, true_negative_windows))
-    # print("prediction size %d" % len(prediction))
+
     assert false_positive_windows + true_negative_windows == num_windows_nominal
 
-    crashed_nominal = crashed_nominal[:-1]
-    sma_nominal = crashed_nominal[:-1]
-
-    assert len(prediction) == (len(crashed_anomalous) + len(crashed_nominal))
-    crashed = pd.concat([crashed_anomalous, crashed_nominal])
-    assert len(prediction) == len(crashed)
-
-    print("time to misbehaviour (s): %d" % seconds_to_anticipate)
-
-    # Calculate and print precision and recall as percentages
-    print("Precision: " + str(round(precision_score(crashed, prediction) * 100, 1)) + " % ")
-    print("Recall: " + str(round(recall_score(crashed, prediction) * 100, 1)) + " % ")
-    # Obtain and print F1 score as a percentage
-    print("F1 score: " + str(round(f1_score(crashed, prediction) * 100, 1)) + " %")
-
-    fpr, tpr, thresholds = roc_curve(crashed, prediction)
-    # Obtain and print AUC-ROC
-    print("AUC-ROC: " + str(round(roc_auc_score(crashed, prediction), 3)))
-
-    # plt.figure()
-    # plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % round(roc_auc_score(crashed, prediction), 3))
-    # plt.plot([0, 1], [0, 1], color='black', label="Random", linestyle='--')
-    # plt.xlim([0.0, 1.0])
-    # plt.ylim([0.0, 1.05])
-    # plt.xlabel('False Positive Rate')
-    # plt.ylabel('True Positive Rate')
-    # plt.title('Receiver operating characteristic (detection time = %d s)' % seconds_to_anticipate)
-    # plt.legend(loc="lower right")
-    # plt.show()
-
-    precision, recall, _ = precision_recall_curve(crashed, prediction)
-    auc_score = auc(recall, precision)
-    print("AUC-PRC: " + str(round(auc_score, 3)) + "\n")
-
-    # plt.figure()
-    # plt.plot(recall, precision, label='PR curve (area = %0.2f)' % round(auc_score, 3))
-    # plt.plot([0, 1], [1, 0], color='black', label="Random", linestyle='--')
-    # plt.xlim([0.0, 1.0])
-    # plt.ylim([0.0, 1.05])
-    # plt.xlabel('Recall')
-    # plt.ylabel('Precision')
-    # plt.title('PR Curve (detection time = %d s)' % seconds_to_anticipate)
-    # plt.legend(loc="lower right")
-    # plt.show()
-
-    if not os.path.exists('novelty_detection.csv'):
-        with open('novelty_detection.csv', mode='w', newline='') as class_imbalance_result_file:
-            writer = csv.writer(class_imbalance_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
-                                lineterminator='\n')
-            writer.writerow(
-                ["simulation", "autoencoder", "ttd", "precision", "recall", "f1", "auc", "aucprc"])
-
-            writer.writerow([sim_name, name, seconds_to_anticipate,
-                             str(round(precision_score(crashed, prediction) * 100, 1)),
-                             str(round(recall_score(crashed, prediction) * 100, 1)),
-                             str(round(f1_score(crashed, prediction) * 100, 1)),
-                             str(round(roc_auc_score(crashed, prediction), 3)),
-                             str(round(auc_score, 3))])
-
-    else:
-        with open('novelty_detection.csv', mode='a') as novelty_detection_result_file:
-            writer = csv.writer(novelty_detection_result_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
-                                lineterminator='\n')
-            writer.writerow([sim_name, name, seconds_to_anticipate,
-                             str(round(precision_score(crashed, prediction) * 100, 1)),
-                             str(round(recall_score(crashed, prediction) * 100, 1)),
-                             str(round(f1_score(crashed, prediction) * 100, 1)),
-                             str(round(roc_auc_score(crashed, prediction), 3)),
-                             str(round(auc_score, 3))])
-            if seconds_to_anticipate == 3:
-                writer.writerow(["", "", "", "", "", "", "", ""])
+    return false_positive_windows, true_negative_windows, threshold
 
 
 def get_threshold(losses, conf_level=0.95):
     # print("Fitting reconstruction error distribution using Gamma distribution")
 
-    shape, loc, scale = gamma.fit(losses, floc=0)
+    # removing zeros
+    losses = np.array(losses)
+    losses_copy = losses[losses != 0]
+    shape, loc, scale = gamma.fit(losses_copy, floc=0)
 
     # print("Creating thresholds using the confidence intervals: %s" % conf_level)
     t = gamma.ppf(conf_level, shape, loc=loc, scale=scale)
+    # t = round(t)
     print('threshold: ' + str(t))
     return t
 
