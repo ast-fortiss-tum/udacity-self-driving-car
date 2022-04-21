@@ -22,7 +22,7 @@ from selforacle.utils_vae import load_vae
 from selforacle.vae import normalize_and_reshape, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
 from utils import load_all_images
 from utils import plot_reconstruction_losses
-from vae_evaluate_novelty_detection_heatmaps_scores import compute_fp_and_tn, compute_tp_and_fn
+from evaluate_failure_prediction_heatmaps_scores import compute_fp_and_tn, compute_tp_and_fn
 
 np.random.seed(0)
 
