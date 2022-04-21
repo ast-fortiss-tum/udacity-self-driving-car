@@ -10,7 +10,7 @@ import os
 from natsort import natsorted
 
 from config import Config
-from vae_evaluate_novelty_detection_heatmaps_scores import evaluate_failure_prediction
+from evaluate_failure_prediction_heatmaps_scores import evaluate_failure_prediction
 
 if __name__ == '__main__':
     os.chdir(os.getcwd().replace('scripts', ''))
