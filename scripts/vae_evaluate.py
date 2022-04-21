@@ -22,6 +22,7 @@ from selforacle.utils_vae import load_vae
 from selforacle.vae import normalize_and_reshape, RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH, IMAGE_CHANNELS
 from utils import load_all_images
 from utils import plot_reconstruction_losses
+from vae_evaluate_novelty_detection_heatmaps_scores import compute_fp_and_tn, compute_tp_and_fn
 
 np.random.seed(0)
 
@@ -146,137 +147,6 @@ def get_results_mispredictions(cfg, sim_name, name,
     #             writer.writerow(["", "", "", "", "", "", "", ""])
 
 
-def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds_to_anticipate):
-    print("time to misbehaviour (s): %d" % seconds_to_anticipate)
-
-    # only occurring when conditions == unexpected
-    true_positive_windows = 0
-    false_negative_windows = 0
-
-    ''' 
-        prepare dataset to get TP and FN from unexpected
-        '''
-    number_frames_anomalous = pd.Series.max(data_df_anomalous['frameId'])
-    simulation_time_anomalous = pd.Series.max(data_df_anomalous['time'])
-    fps_anomalous = number_frames_anomalous // simulation_time_anomalous
-
-    crashed_anomalous = data_df_anomalous['crashed']
-    crashed_anomalous.is_copy = None
-    crashed_anomalous_in_anomalous_conditions = crashed_anomalous.copy()
-
-    # creates the ground truth
-    all_first_frame_position_crashed_sequences = []
-    for idx, item in enumerate(crashed_anomalous_in_anomalous_conditions):
-        if idx == number_frames_anomalous:
-            continue
-
-        if crashed_anomalous_in_anomalous_conditions[idx] == 0 and crashed_anomalous_in_anomalous_conditions[
-            idx + 1] == 1:
-            first_index_crash = idx + 1
-            all_first_frame_position_crashed_sequences.append(first_index_crash)
-            print("first_index_crash: %d" % first_index_crash)
-
-    print("identified %d crash(es)" % len(all_first_frame_position_crashed_sequences))
-    print(all_first_frame_position_crashed_sequences)
-    frames_to_reassign = fps_anomalous * seconds_to_anticipate  # start of the sequence
-
-    # frames_to_reassign_2 = 1  # fps_anomalous * (seconds_to_anticipate - 1)  # end of the sequence
-    frames_to_reassign_2 = fps_anomalous * (seconds_to_anticipate - 1)  # end of the sequence
-
-    reaction_frames = pd.Series()
-    for item in all_first_frame_position_crashed_sequences:
-        crashed_anomalous_in_anomalous_conditions.loc[item - frames_to_reassign: item - frames_to_reassign_2] = 1
-        reaction_frames = reaction_frames.append(
-            crashed_anomalous_in_anomalous_conditions[item - frames_to_reassign: item - frames_to_reassign_2])
-
-        print("frames between %d and %d have been labelled as 1" % (
-            item - frames_to_reassign, item - frames_to_reassign_2))
-        print("reaction frames size is %d" % len(reaction_frames))
-
-    crashed_anomalous_in_anomalous_conditions = reaction_frames
-    num_windows_anomalous = len(crashed_anomalous_in_anomalous_conditions) // fps_anomalous
-    sma_anomalous = pd.Series(losses_on_anomalous)
-    sma_anomalous = sma_anomalous.iloc[reaction_frames.index.to_list()]
-    assert len(crashed_anomalous_in_anomalous_conditions) == len(sma_anomalous)
-    prediction = []
-
-    # window_mean = sma_anomalous.max()
-    window_mean = sma_anomalous.mean()
-
-    crashed_mean = crashed_anomalous_in_anomalous_conditions.mean()
-    print(sma_anomalous.mean(), sma_anomalous.max())
-
-    if window_mean >= threshold:
-        if crashed_mean > 0:
-            true_positive_windows += 1
-            prediction.extend([1] * fps_anomalous)
-        else:
-            raise ValueError
-
-    elif window_mean < threshold:
-        if crashed_mean > 0:
-            false_negative_windows += 1
-            prediction.extend([0] * fps_anomalous)
-        else:
-            raise ValueError
-    print("true positives: %d - false negatives: %d" % (true_positive_windows, false_negative_windows))
-
-    return true_positive_windows, false_negative_windows
-
-
-def compute_fp_and_tn(data_df_nominal):
-    # when conditions == nominal I count only FP and TN
-    false_positive_windows = 0
-    true_negative_windows = 0
-
-    losses = data_df_nominal['loss'].tolist()
-    # losses = losses[:500]
-
-    # get threshold on nominal data_nominal
-    threshold = get_threshold(losses, conf_level=0.95)
-
-    number_frames_nominal = pd.Series.max(data_df_nominal['frameId'])
-    simulation_time_nominal = pd.Series.max(data_df_nominal['time'])
-    fps_nominal = number_frames_nominal // simulation_time_nominal
-
-    num_windows_nominal = len(data_df_nominal) // fps_nominal
-    if len(data_df_nominal) % fps_nominal != 0:
-        num_to_delete = len(data_df_nominal) - (num_windows_nominal * fps_nominal) - 1
-        data_df_nominal = data_df_nominal[:-num_to_delete]
-
-    losses = pd.Series(data_df_nominal['loss'])
-    sma_nominal = losses.rolling(fps_nominal, min_periods=1).mean()
-
-    for idx, loss in enumerate(sma_nominal):
-
-        if idx > 0 and idx % fps_nominal == 0:
-
-            # print("window [%d - %d]" % (idx - fps_nominal, idx))
-
-            window_mean = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
-
-            if window_mean >= threshold:
-                false_positive_windows += 1
-            elif window_mean < threshold:
-                true_negative_windows += 1
-        elif idx == len(sma_nominal) - 1:
-
-            # print("window [%d - %d]" % (idx - fps_nominal, idx))
-
-            window_mean = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
-
-            if window_mean >= threshold:
-                false_positive_windows += 1
-            elif window_mean < threshold:
-                true_negative_windows += 1
-
-    print("false positives: %d - true negatives: %d" % (false_positive_windows, true_negative_windows))
-
-    assert false_positive_windows + true_negative_windows == num_windows_nominal
-
-    return false_positive_windows, true_negative_windows, threshold
-
-
 def get_threshold(losses, conf_level=0.95):
     # print("Fitting reconstruction error distribution using Gamma distribution")
 
@@ -287,7 +157,6 @@ def get_threshold(losses, conf_level=0.95):
 
     # print("Creating thresholds using the confidence intervals: %s" % conf_level)
     t = gamma.ppf(conf_level, shape, loc=loc, scale=scale)
-    # t = round(t)
     print('threshold: ' + str(t))
     return t
 

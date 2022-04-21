@@ -14,7 +14,8 @@ from keras import backend as K
 from config import Config
 from selforacle import utils_vae
 from utils import load_all_heatmaps
-from vae_evaluate import load_or_compute_losses, compute_fp_and_tn, compute_tp_and_fn
+from vae_evaluate import load_or_compute_losses
+from vae_evaluate_novelty_detection_heatmaps_scores import compute_fp_and_tn, compute_tp_and_fn
 
 
 def evaluate_novelty_detection(cfg, track, condition):
