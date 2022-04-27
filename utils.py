@@ -352,6 +352,8 @@ def load_all_images(cfg):
     images = np.empty([len(x), IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
 
     for i, path in enumerate(x):
+        path = path.replace("\\", "/")
+
         image = mpimg.imread(path)  # load center images
 
         # visualize the input_image image
