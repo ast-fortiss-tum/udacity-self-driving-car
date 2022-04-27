@@ -183,6 +183,12 @@ def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds
 
     reaction_window = pd.Series()
     for item in all_first_frame_position_crashed_sequences:
+
+        # the detection window overlaps with a previous crash; skip it
+        if crashed_anomalous_in_anomalous_conditions.loc[
+           item - frames_to_reassign: item - frames_to_reassign_2].sum() > 2:
+            return true_positive_windows, false_negative_windows
+
         crashed_anomalous_in_anomalous_conditions.loc[item - frames_to_reassign: item - frames_to_reassign_2] = 1
         reaction_window = reaction_window.append(
             crashed_anomalous_in_anomalous_conditions[item - frames_to_reassign: item - frames_to_reassign_2])
