@@ -26,3 +26,4 @@ novelty_detection*.csv
 class_imbalance*.csv
 
 failure_prediction_heatmaps.csv
+*.csv
