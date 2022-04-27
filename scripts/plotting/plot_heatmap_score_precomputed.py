@@ -21,13 +21,13 @@ if __name__ == '__main__':
 
     print("Script to plot score function based on heatmap")
 
-    summary_type = '-avg-grad'
-    # summary_type = '-avg'
+    # summary_type = '-avg-grad'
+    summary_type = '-avg'
 
     # 1. load heatmap scores in nominal conditions
 
     cfg.SIMULATION_NAME = 'gauss-journal-track1-nominal'
-    path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, 'htm-smoothgrad-scores' + summary_type + '.npy')
+    path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, 'htm-gradcam++-scores' + summary_type + '.npy')
     print(path)
     original_losses = np.load(path)
     # original_losses = original_losses[:1500]
@@ -37,8 +37,8 @@ if __name__ == '__main__':
 
     # 2. load heatmap scores in anomalous conditions
 
-    cfg.SIMULATION_NAME = 'xai-track1-mutant-second-failure'
-    path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, 'htm-smoothgrad-scores' + summary_type + '.npy')
+    cfg.SIMULATION_NAME = 'ood/xai-track1-rain-10'
+    path = os.path.join(cfg.TESTING_DATA_DIR, cfg.SIMULATION_NAME, 'htm-gradcam++-scores' + summary_type + '.npy')
     print(path)
     anomalous_losses = np.load(path)
 

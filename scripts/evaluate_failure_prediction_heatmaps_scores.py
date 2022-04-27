@@ -30,7 +30,8 @@ def get_threshold(losses, conf_level=0.95):
     return t
 
 
-def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type, aggregation_method):
+def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type, aggregation_method, condition,
+                                num_samples):
     print("Using summarization average" if summary_type is '-avg' else "Using summarization gradient")
     print("Using aggregation mean" if aggregation_method is 'mean' else "Using aggregation max")
 
@@ -42,11 +43,18 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                         'htm-' + heatmap_type + '-scores' + summary_type + '.npy')
     original_losses = np.load(path)
 
+    if num_samples is not "all":
+        original_losses = original_losses[:num_samples]  # we limit the number of samples to avoid unbalance
+
     path = os.path.join(cfg.TESTING_DATA_DIR,
                         cfg.SIMULATION_NAME,
                         'heatmaps-' + heatmap_type,
                         'driving_log.csv')
     data_df_nominal = pd.read_csv(path)
+
+    if num_samples is not "all":
+        data_df_nominal = data_df_nominal[:num_samples]  # we limit the number of samples to avoid unbalance
+
     data_df_nominal['loss'] = original_losses
 
     # 2. load heatmap scores in anomalous conditions
@@ -64,7 +72,9 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
     data_df_anomalous['loss'] = anomalous_losses
 
     # 3. compute a threshold from nominal conditions, and FP and TN
-    false_positive_windows, true_negative_windows, threshold = compute_fp_and_tn(data_df_nominal)
+    # TODO: add aggregation_method in the method below
+    false_positive_windows, true_negative_windows, threshold = compute_fp_and_tn(data_df_nominal,
+                                                                                 aggregation_method)
 
     # 4. compute TP and FN using different time to misbehaviour windows
     for seconds in range(1, 7):
@@ -96,8 +106,9 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
             print("F-1: undefined\n")
 
         # 5. write results in a CSV files
-        if not os.path.exists(heatmap_type + '.csv'):
-            with open(heatmap_type + '.csv', mode='w', newline='') as result_file:
+        if not os.path.exists(heatmap_type + '-' + str(condition) + '-' + str(num_samples) + '.csv'):
+            with open(heatmap_type + '-' + str(condition) + '-' + str(num_samples) + '.csv', mode='w',
+                      newline='') as result_file:
                 writer = csv.writer(result_file,
                                     delimiter=',',
                                     quotechar='"',
@@ -106,7 +117,7 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                 writer.writerow(
                     ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures", "ttm",
                      "precision", "recall", "f1"])
-                writer.writerow([heatmap_type, summary_type, aggregation_method, simulation_name,
+                writer.writerow([heatmap_type, summary_type[1:], aggregation_method, simulation_name,
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
                                  str(round(precision * 100)),
@@ -114,13 +125,14 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                                  str(round(f1 * 100))])
 
         else:
-            with open(heatmap_type + '.csv', mode='a', newline='') as result_file:
+            with open(heatmap_type + '-' + str(condition) + '-' + str(num_samples) + '.csv', mode='a',
+                      newline='') as result_file:
                 writer = csv.writer(result_file,
                                     delimiter=',',
                                     quotechar='"',
                                     quoting=csv.QUOTE_MINIMAL,
                                     lineterminator='\n')
-                writer.writerow([heatmap_type, summary_type, aggregation_method, simulation_name,
+                writer.writerow([heatmap_type, summary_type[1:], aggregation_method, simulation_name,
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
                                  str(round(precision * 100)),
@@ -203,7 +215,7 @@ def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds
     return true_positive_windows, false_negative_windows
 
 
-def compute_fp_and_tn(data_df_nominal):
+def compute_fp_and_tn(data_df_nominal, aggregation_method):
     # when conditions == nominal I count only FP and TN
     false_positive_windows = 0
     true_negative_windows = 0
@@ -231,7 +243,11 @@ def compute_fp_and_tn(data_df_nominal):
 
             # print("window [%d - %d]" % (idx - fps_nominal, idx))
 
-            aggregated_score = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
+            aggregated_score = None
+            if aggregation_method == "mean":
+                aggregated_score = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
+            elif aggregation_method == "max":
+                aggregated_score = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).max()
 
             if aggregated_score >= threshold:
                 false_positive_windows += 1
@@ -242,7 +258,11 @@ def compute_fp_and_tn(data_df_nominal):
 
             # print("window [%d - %d]" % (idx - fps_nominal, idx))
 
-            aggregated_score = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
+            aggregated_score = None
+            if aggregation_method == "mean":
+                aggregated_score = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).mean()
+            elif aggregation_method == "max":
+                aggregated_score = pd.Series(sma_nominal.iloc[idx - fps_nominal:idx]).max()
 
             if aggregated_score >= threshold:
                 false_positive_windows += 1
@@ -268,7 +288,10 @@ def main():
                                 heatmap_type='smoothgrad',
                                 simulation_name=cfg.SIMULATION_NAME,
                                 summary_type='-avg-grad',
-                                aggregation_method='max')
+                                aggregation_method='max',
+                                condition='ood',
+                                num_samples='all')
+
 
 if __name__ == '__main__':
     main()

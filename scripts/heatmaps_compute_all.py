@@ -12,12 +12,16 @@ from heatmap import compute_heatmap
 
 if __name__ == '__main__':
     os.chdir(os.getcwd().replace('scripts', ''))
-    print(os.getcwd())
 
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    simulations = glob.glob('simulations/*')
+    simulations = glob.glob('simulations/mutants/*')
+
+    cfg.SDC_MODEL_NAME = "track1-dave2-uncropped-mc-034.h5"
 
     for sim in simulations:
-        compute_heatmap(cfg, simulation_name=sim)
+        sim = sim.replace("simulations/", "")
+        # if "rain" in sim or "snow" in sim or "fog" in sim:
+        if "nominal" not in sim:
+            compute_heatmap(cfg, simulation_name=sim, attention_type="GradCam++")

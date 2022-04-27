@@ -13,51 +13,49 @@ from keras import backend as K
 
 from config import Config
 from selforacle import utils_vae
-from utils import load_all_heatmaps
+from utils import load_all_images
 from vae_evaluate import load_or_compute_losses
 from evaluate_failure_prediction_heatmaps_scores import compute_fp_and_tn, compute_tp_and_fn
 
 
-def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, aggregation_method, condition, num_samples):
+def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condition, num_samples):
     # 1. compute the nominal threshold
     cfg.SIMULATION_NAME = 'gauss-journal-track1-nominal'
-    dataset = load_all_heatmaps(cfg)
+    dataset = load_all_images(cfg)
 
     if num_samples is not "all":
         dataset = dataset[:num_samples]  # we limit the number of samples to avoid unbalance
 
     path = os.path.join(cfg.TESTING_DATA_DIR,
                         cfg.SIMULATION_NAME,
-                        'heatmaps-' + heatmap_type,
                         'driving_log.csv')
     data_df_nominal = pd.read_csv(path)
 
     if num_samples is not "all":
         data_df_nominal = data_df_nominal[:num_samples]  # we limit the number of samples to avoid unbalance
 
-    name_of_autoencoder = "track1-VAE-latent16-heatmaps-" + heatmap_type
+    name_of_autoencoder = "track1-MSE-latent2"
 
     vae = utils_vae.load_vae_by_name(name_of_autoencoder)
 
-    name_of_losses_file = "track1-VAE-latent16-heatmaps-" \
-                          + heatmap_type + '-' \
-                          + cfg.SIMULATION_NAME.replace("/", "-") + "-" \
-                          + num_samples
+    name_of_losses_file = "track1-MSE-latent2-selforacle" + '-' \
+                          + cfg.SIMULATION_NAME.replace("/", "-") \
+                          + "-" + num_samples
+
     original_losses = load_or_compute_losses(vae, dataset, name_of_losses_file, delete_cache=False)
     data_df_nominal['loss'] = original_losses
 
     # 2. evaluate on anomalous conditions
     cfg.SIMULATION_NAME = simulation_name
 
-    dataset = load_all_heatmaps(cfg)
+    dataset = load_all_images(cfg)
 
     path = os.path.join(cfg.TESTING_DATA_DIR,
                         cfg.SIMULATION_NAME,
-                        'heatmaps-' + heatmap_type,
                         'driving_log.csv')
     data_df_anomalous = pd.read_csv(path)
 
-    name_of_losses_file = "track1-VAE-latent16-heatmaps-" + heatmap_type + '-' + cfg.SIMULATION_NAME.replace("/", "-")
+    name_of_losses_file = "track1-MSE-latent2-selforacle" + '-' + cfg.SIMULATION_NAME.replace("/", "-")
 
     new_losses = load_or_compute_losses(vae, dataset, name_of_losses_file, delete_cache=False)
     data_df_anomalous['loss'] = new_losses
@@ -93,10 +91,9 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, aggregation_
             print("F-1: undefined\n")
 
         # 5. write results in a CSV files
-        if not os.path.exists("track1-VAE-latent16-heatmaps-" + heatmap_type + '-' + str(condition) + '-' + str(
-                num_samples) + '.csv'):
-            with open("track1-VAE-latent16-heatmaps-" + heatmap_type + '-' + str(condition) + '-' + str(
-                    num_samples) + '.csv', mode='w', newline='') as result_file:
+        if not os.path.exists('track1-MSE-latent2-selforacle' + '-' + str(condition) + '-' + str(num_samples) + '.csv'):
+            with open('track1-MSE-latent2-selforacle' + '-' + str(condition) + '-' + str(num_samples) + '.csv', mode='w',
+                      newline='') as result_file:
                 writer = csv.writer(result_file,
                                     delimiter=',',
                                     quotechar='"',
@@ -105,7 +102,7 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, aggregation_
                 writer.writerow(
                     ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures", "ttm",
                      "precision", "recall", "f1"])
-                writer.writerow(["track1-VAE-latent16-heatmaps-" + heatmap_type, 'rec. loss', aggregation_method,
+                writer.writerow(["track1-MSE-latent2-selforacle", 'rec. loss', aggregation_method,
                                  simulation_name,
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
@@ -114,14 +111,14 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, aggregation_
                                  str(round(f1 * 100))])
 
         else:
-            with open("track1-VAE-latent16-heatmaps-" + heatmap_type + '-' + str(condition) + '-' + str(
-                    num_samples) + '.csv', mode='a', newline='') as result_file:
+            with open('track1-MSE-latent2-selforacle' + '-' + str(condition) + '-' + str(num_samples) + '.csv', mode='a',
+                      newline='') as result_file:
                 writer = csv.writer(result_file,
                                     delimiter=',',
                                     quotechar='"',
                                     quoting=csv.QUOTE_MINIMAL,
                                     lineterminator='\n')
-                writer.writerow(["track1-VAE-latent16-heatmaps-" + heatmap_type, 'rec. loss', aggregation_method,
+                writer.writerow(["track1-MSE-latent2-selforacle", 'rec. loss', aggregation_method,
                                  simulation_name,
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
@@ -144,7 +141,6 @@ def main():
     cfg.SIMULATION_NAME = 'xai-track1-fog-10'
 
     evaluate_failure_prediction(cfg,
-                                heatmap_type='smoothgrad',
                                 simulation_name=cfg.SIMULATION_NAME,
                                 aggregation_method='max')
 

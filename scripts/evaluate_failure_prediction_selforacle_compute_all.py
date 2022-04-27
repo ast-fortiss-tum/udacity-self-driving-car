@@ -10,7 +10,7 @@ import os
 from natsort import natsorted
 
 from config import Config
-from evaluate_failure_prediction_heatmaps_scores import evaluate_failure_prediction
+from evaluate_failure_prediction_selforacle import evaluate_failure_prediction
 
 if __name__ == '__main__':
     os.chdir(os.getcwd().replace('scripts', ''))
@@ -18,21 +18,16 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    simulations = glob.glob('simulations/*')
-
-    # cfg.TESTING_DATA_DIR = "/Volumes/Seagate Backup Plus Drive/Heatmaps-Failure-Prediction"
-    simulations = natsorted(glob.glob(cfg.TESTING_DATA_DIR + '/*'))
-
-    for ht in ['smoothgrad']:
-        for st in ['-avg', '-avg-grad']:
+    # for num_samples in ['all', 1000, 1100, 1200, 1300, 1400, 1500]:
+    for num_samples in ['all']:
+        for condition in ['mutants']:
+            simulations = natsorted(glob.glob('simulations/' + condition + '/*'))
             for am in ['mean', 'max']:
                 for sim in simulations:
-                    if "fog" in sim:
-                        sim = sim.replace("simulations/", "")
+                    sim = sim.replace("simulations/", "")
+                    if "nominal" not in sim:
                         evaluate_failure_prediction(cfg,
-                                                    heatmap_type=ht,
                                                     simulation_name=sim,
-                                                    summary_type=st,
-                                                    aggregation_method=am)
-                    else:
-                        continue
+                                                    aggregation_method=am,
+                                                    condition=condition,
+                                                    num_samples=num_samples)

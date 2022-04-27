@@ -7,6 +7,7 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from tf_keras_vis.gradcam_plus_plus import GradcamPlusPlus
 from tf_keras_vis.saliency import Saliency
 from tqdm import tqdm
 
@@ -18,10 +19,7 @@ def score_when_decrease(output):
     return -1.0 * output[:, 0]
 
 
-def compute_heatmap(cfg, simulation_name=None, attention_type="SmoothGrad"):
-    if simulation_name is None:
-        simulation_name = cfg.SIMULATION_NAME
-
+def compute_heatmap(cfg, simulation_name, attention_type="SmoothGrad"):
     print("Computing attention heatmaps for simulation %s using %s" % (simulation_name, attention_type))
 
     # load the image file paths from csv
@@ -40,6 +38,9 @@ def compute_heatmap(cfg, simulation_name=None, attention_type="SmoothGrad"):
     saliency = None
     if attention_type == "SmoothGrad":
         saliency = Saliency(self_driving_car_model, model_modifier=None)
+    elif attention_type == "GradCam++":
+        saliency = GradcamPlusPlus(self_driving_car_model, model_modifier=None)
+
     avg_heatmaps = []
     avg_gradient_heatmaps = []
     list_of_image_paths = []
@@ -73,6 +74,8 @@ def compute_heatmap(cfg, simulation_name=None, attention_type="SmoothGrad"):
         saliency_map = None
         if attention_type == "SmoothGrad":
             saliency_map = saliency(score_when_decrease, x, smooth_samples=20, smooth_noise=0.20)
+        elif attention_type == "GradCam++":
+            saliency_map = saliency(score_when_decrease, x, penultimate_layer=-1)
 
         # compute average of the heatmap
         average = np.average(saliency_map)
@@ -159,9 +162,9 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    attention = "SmoothGrad"
+    attention = "GradCam++"  # "SmoothGrad"
 
     cfg.SDC_MODEL_NAME = "track1-dave2-uncropped-mc-034.h5"
-    cfg.SIMULATION_NAME = "gauss-journal-track1-nominal"
+    cfg.SIMULATION_NAME = "ood/xai-track1-rain10"
 
-    compute_heatmap(cfg=cfg, simulation_name=None, attention_type=attention)
+    compute_heatmap(cfg=cfg, simulation_name=cfg.SIMULATION_NAME, attention_type=attention)
