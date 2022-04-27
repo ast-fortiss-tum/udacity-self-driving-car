@@ -72,36 +72,40 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
     data_df_anomalous['loss'] = anomalous_losses
 
     # 3. compute a threshold from nominal conditions, and FP and TN
-    # TODO: add aggregation_method in the method below
     false_positive_windows, true_negative_windows, threshold = compute_fp_and_tn(data_df_nominal,
                                                                                  aggregation_method)
 
     # 4. compute TP and FN using different time to misbehaviour windows
     for seconds in range(1, 7):
-        true_positive_windows, false_negative_windows = compute_tp_and_fn(data_df_anomalous,
-                                                                          anomalous_losses,
-                                                                          threshold,
-                                                                          seconds,
-                                                                          aggregation_method)
+        true_positive_windows, false_negative_windows, undetectable = compute_tp_and_fn(data_df_anomalous,
+                                                                                        anomalous_losses,
+                                                                                        threshold,
+                                                                                        seconds,
+                                                                                        aggregation_method)
 
         if true_positive_windows != 0:
             precision = true_positive_windows / (true_positive_windows + false_positive_windows)
             recall = true_positive_windows / (true_positive_windows + false_negative_windows)
+            accuracy = (true_positive_windows + true_negative_windows) / (
+                    true_positive_windows + true_negative_windows + false_positive_windows + false_negative_windows)
 
             if precision != 0 or recall != 0:
                 f1 = (2 * precision * recall) / (precision + recall)
 
                 print("Precision: " + str(round(precision * 100)) + "%")
+                print("Accuracy: " + str(round(accuracy * 100)) + "%")
                 print("Recall: " + str(round(recall * 100)) + "%")
                 print("F-1: " + str(round(f1 * 100)) + "%\n")
             else:
-                precision = recall = f1 = 0
+                precision = recall = f1 = accuracy = 0
                 print("Precision: undefined")
+                print("Accuracy: undefined")
                 print("Recall: undefined")
                 print("F-1: undefined\n")
         else:
-            precision = recall = f1 = 0
+            precision = recall = f1 = accuracy = 0
             print("Precision: undefined")
+            print("Accuracy: undefined")
             print("Recall: undefined")
             print("F-1: undefined\n")
 
@@ -116,11 +120,12 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                                     lineterminator='\n')
                 writer.writerow(
                     ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures", "ttm",
-                     "precision", "recall", "f1"])
+                     "precision", 'accuracy', "recall", "f1"])
                 writer.writerow([heatmap_type, summary_type[1:], aggregation_method, simulation_name,
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
                                  str(round(precision * 100)),
+                                 str(round(accuracy * 100)),
                                  str(round(recall * 100)),
                                  str(round(f1 * 100))])
 
@@ -136,6 +141,7 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
                                  str(round(precision * 100)),
+                                 str(round(accuracy * 100)),
                                  str(round(recall * 100)),
                                  str(round(f1 * 100))])
 
@@ -150,6 +156,7 @@ def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds
     # only occurring when conditions == unexpected
     true_positive_windows = 0
     false_negative_windows = 0
+    undetectable_windows = 0
 
     ''' 
         prepare dataset to get TP and FN from unexpected
@@ -182,43 +189,51 @@ def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds
     frames_to_reassign_2 = fps_anomalous * (seconds_to_anticipate - 1)  # first frame n seconds before the failure
 
     reaction_window = pd.Series()
+    print(all_first_frame_position_crashed_sequences)
+
     for item in all_first_frame_position_crashed_sequences:
+        print("analysing failure %d" % item)
 
         # the detection window overlaps with a previous crash; skip it
         if crashed_anomalous_in_anomalous_conditions.loc[
            item - frames_to_reassign: item - frames_to_reassign_2].sum() > 2:
-            return true_positive_windows, false_negative_windows
+            print("failure %d cannot be detected at TTM=%d" % (item, seconds_to_anticipate))
+            undetectable_windows += 1
+        else:
+            crashed_anomalous_in_anomalous_conditions.loc[item - frames_to_reassign: item - frames_to_reassign_2] = 1
+            reaction_window = reaction_window.append(
+                crashed_anomalous_in_anomalous_conditions[item - frames_to_reassign: item - frames_to_reassign_2])
 
-        crashed_anomalous_in_anomalous_conditions.loc[item - frames_to_reassign: item - frames_to_reassign_2] = 1
-        reaction_window = reaction_window.append(
-            crashed_anomalous_in_anomalous_conditions[item - frames_to_reassign: item - frames_to_reassign_2])
+            print("frames between %d and %d have been labelled as 1" % (
+                item - frames_to_reassign, item - frames_to_reassign_2))
+            print("reaction frames size is %d" % len(reaction_window))
 
-        print("frames between %d and %d have been labelled as 1" % (
-            item - frames_to_reassign, item - frames_to_reassign_2))
-        print("reaction frames size is %d" % len(reaction_window))
+            sma_anomalous = pd.Series(losses_on_anomalous)
+            sma_anomalous = sma_anomalous.iloc[reaction_window.index.to_list()]
+            assert len(reaction_window) == len(sma_anomalous)
 
-        sma_anomalous = pd.Series(losses_on_anomalous)
-        sma_anomalous = sma_anomalous.iloc[reaction_window.index.to_list()]
-        assert len(reaction_window) == len(sma_anomalous)
+            # print(sma_anomalous)
 
-        # print(sma_anomalous)
+            aggregated_score = None
+            if aggregation_method == "mean":
+                aggregated_score = sma_anomalous.mean()
+            elif aggregation_method == "max":
+                aggregated_score = sma_anomalous.max()
 
-        aggregated_score = None
-        if aggregation_method == "mean":
-            aggregated_score = sma_anomalous.mean()
-        elif aggregation_method == "max":
-            aggregated_score = sma_anomalous.max()
+            print("threshold %s\tmean: %s\tmax: %s" % (
+                str(threshold), str(sma_anomalous.mean()), str(sma_anomalous.max())))
 
-        print("threshold %s\tmean: %s\tmax: %s" % (str(threshold), str(sma_anomalous.mean()), str(sma_anomalous.max())))
+            if aggregated_score >= threshold:
+                true_positive_windows += 1
+            elif aggregated_score < threshold:
+                false_negative_windows += 1
 
-        if aggregated_score >= threshold:
-            true_positive_windows += 1
-        elif aggregated_score < threshold:
-            false_negative_windows += 1
+        print("failure: %d - true positives: %d - false negatives: %d - undetectable: %d" % (
+            item, true_positive_windows, false_negative_windows, undetectable_windows))
 
-        print("true positives: %d - false negatives: %d" % (true_positive_windows, false_negative_windows))
-
-    return true_positive_windows, false_negative_windows
+    assert len(all_first_frame_position_crashed_sequences) == (
+            true_positive_windows + false_negative_windows + undetectable_windows)
+    return true_positive_windows, false_negative_windows, undetectable_windows
 
 
 def compute_fp_and_tn(data_df_nominal, aggregation_method):
@@ -288,14 +303,14 @@ def main():
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    cfg.SIMULATION_NAME = 'xai-track1-rain-20'
+    cfg.SIMULATION_NAME = 'mutants/udacity_change_label_mutated0_MP_25.0_1'
 
     evaluate_failure_prediction(cfg,
                                 heatmap_type='smoothgrad',
                                 simulation_name=cfg.SIMULATION_NAME,
                                 summary_type='-avg-grad',
                                 aggregation_method='max',
-                                condition='ood',
+                                condition='mutants',
                                 num_samples='all')
 
 

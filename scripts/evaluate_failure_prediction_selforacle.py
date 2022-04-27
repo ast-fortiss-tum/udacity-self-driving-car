@@ -39,8 +39,8 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
     vae = utils_vae.load_vae_by_name(name_of_autoencoder)
 
     name_of_losses_file = "track1-MSE-latent2-selforacle" + '-' \
-                          + cfg.SIMULATION_NAME.replace("/", "-") \
-                          + "-" + num_samples
+                          + cfg.SIMULATION_NAME.replace("/", "-").replace("\\", "-") \
+                          + "-" + str(num_samples)
 
     original_losses = load_or_compute_losses(vae, dataset, name_of_losses_file, delete_cache=False)
     data_df_nominal['loss'] = original_losses
@@ -55,7 +55,8 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
                         'driving_log.csv')
     data_df_anomalous = pd.read_csv(path)
 
-    name_of_losses_file = "track1-MSE-latent2-selforacle" + '-' + cfg.SIMULATION_NAME.replace("/", "-")
+    name_of_losses_file = "track1-MSE-latent2-selforacle" + '-' + cfg.SIMULATION_NAME.replace("/", "-").replace("\\",
+                                                                                                                "-")
 
     new_losses = load_or_compute_losses(vae, dataset, name_of_losses_file, delete_cache=False)
     data_df_anomalous['loss'] = new_losses
@@ -63,30 +64,35 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
     false_positive_windows, true_negative_windows, threshold = compute_fp_and_tn(data_df_nominal, aggregation_method)
 
     for seconds in range(1, 7):
-        true_positive_windows, false_negative_windows = compute_tp_and_fn(data_df_anomalous,
-                                                                          new_losses,
-                                                                          threshold,
-                                                                          seconds,
-                                                                          aggregation_method)
+        true_positive_windows, false_negative_windows, undetectable_windows = compute_tp_and_fn(data_df_anomalous,
+                                                                                                new_losses,
+                                                                                                threshold,
+                                                                                                seconds,
+                                                                                                aggregation_method)
 
         if true_positive_windows != 0:
             precision = true_positive_windows / (true_positive_windows + false_positive_windows)
             recall = true_positive_windows / (true_positive_windows + false_negative_windows)
+            accuracy = (true_positive_windows + true_negative_windows) / (
+                    true_positive_windows + true_negative_windows + false_positive_windows + false_negative_windows)
 
             if precision != 0 or recall != 0:
                 f1 = (2 * precision * recall) / (precision + recall)
 
                 print("Precision: " + str(round(precision * 100)) + "%")
+                print("Accuracy: " + str(round(accuracy * 100)) + "%")
                 print("Recall: " + str(round(recall * 100)) + "%")
                 print("F-1: " + str(round(f1 * 100)) + "%\n")
             else:
-                precision = recall = f1 = 0
+                precision = recall = f1 = accuracy = 0
                 print("Precision: undefined")
+                print("Accuracy: undefined")
                 print("Recall: undefined")
                 print("F-1: undefined\n")
         else:
-            precision = recall = f1 = 0
+            precision = recall = f1 = accuracy = 0
             print("Precision: undefined")
+            print("Accuracy: undefined")
             print("Recall: undefined")
             print("F-1: undefined\n")
 
@@ -101,12 +107,13 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
                                     lineterminator='\n')
                 writer.writerow(
                     ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures", "ttm",
-                     "precision", "recall", "f1"])
+                     "precision", "accuracy", "recall", "f1"])
                 writer.writerow(["track1-MSE-latent2-selforacle", 'rec. loss', aggregation_method,
                                  simulation_name,
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
                                  str(round(precision * 100)),
+                                 str(round(accuracy * 100)),
                                  str(round(recall * 100)),
                                  str(round(f1 * 100))])
 
@@ -123,6 +130,7 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
                                  str(true_positive_windows + false_negative_windows),
                                  seconds,
                                  str(round(precision * 100)),
+                                 str(round(accuracy * 100)),
                                  str(round(recall * 100)),
                                  str(round(f1 * 100))])
 
