@@ -18,8 +18,7 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.from_pyfile("config_my.py")
 
-    # for num_samples in ['all', 1000, 1100, 1200, 1300, 1400, 1500]:
-    for num_samples in ['all']:
+    for num_samples in ['all', 1000, 1100, 1200, 1300, 1400, 1500]:
         for condition in ['ood', 'mutants']:
             simulations = natsorted(glob.glob('simulations/' + condition + '/*'))
             for ht in ['smoothgrad']:
@@ -28,10 +27,11 @@ if __name__ == '__main__':
                         for sim in simulations:
                             if "nominal" not in sim:
                                 sim = sim.replace("simulations/", "")
-                                evaluate_failure_prediction(cfg,
-                                                            heatmap_type=ht,
-                                                            simulation_name=sim,
-                                                            summary_type=st,
-                                                            aggregation_method=am,
-                                                            condition=condition,
-                                                            num_samples=num_samples)
+                                if "nominal" not in sim:
+                                    evaluate_failure_prediction(cfg,
+                                                                heatmap_type=ht,
+                                                                simulation_name=sim,
+                                                                summary_type=st,
+                                                                aggregation_method=am,
+                                                                condition=condition,
+                                                                num_samples=num_samples)
