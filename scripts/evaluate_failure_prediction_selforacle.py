@@ -63,7 +63,7 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
 
     false_positive_windows, true_negative_windows, threshold = compute_fp_and_tn(data_df_nominal, aggregation_method)
 
-    for seconds in range(1, 7):
+    for seconds in range(1, 4):
         true_positive_windows, false_negative_windows, undetectable_windows = compute_tp_and_fn(data_df_anomalous,
                                                                                                 new_losses,
                                                                                                 threshold,
@@ -106,11 +106,14 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
                                     quoting=csv.QUOTE_MINIMAL,
                                     lineterminator='\n')
                 writer.writerow(
-                    ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures", "ttm",
-                     "precision", "accuracy", "recall", "f1"])
+                    ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures",
+                     "detected", "undetected", "undetectable", "ttm", "precision", 'accuracy', "recall", "f1"])
                 writer.writerow(["track1-MSE-latent2-selforacle", 'rec. loss', aggregation_method,
                                  simulation_name,
                                  str(true_positive_windows + false_negative_windows),
+                                 str(true_positive_windows),
+                                 str(false_negative_windows),
+                                 str(undetectable_windows),
                                  seconds,
                                  str(round(precision * 100)),
                                  str(round(accuracy * 100)),
@@ -128,6 +131,8 @@ def evaluate_failure_prediction(cfg, simulation_name, aggregation_method, condit
                 writer.writerow(["track1-MSE-latent2-selforacle", 'rec. loss', aggregation_method,
                                  simulation_name,
                                  str(true_positive_windows + false_negative_windows),
+                                 str(true_positive_windows),
+                                 str(false_negative_windows),
                                  seconds,
                                  str(round(precision * 100)),
                                  str(round(accuracy * 100)),

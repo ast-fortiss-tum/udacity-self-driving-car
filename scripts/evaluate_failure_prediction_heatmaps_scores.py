@@ -76,12 +76,12 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                                                                                  aggregation_method)
 
     # 4. compute TP and FN using different time to misbehaviour windows
-    for seconds in range(1, 7):
-        true_positive_windows, false_negative_windows, undetectable = compute_tp_and_fn(data_df_anomalous,
-                                                                                        anomalous_losses,
-                                                                                        threshold,
-                                                                                        seconds,
-                                                                                        aggregation_method)
+    for seconds in range(1, 4):
+        true_positive_windows, false_negative_windows, undetectable_windows = compute_tp_and_fn(data_df_anomalous,
+                                                                                                anomalous_losses,
+                                                                                                threshold,
+                                                                                                seconds,
+                                                                                                aggregation_method)
 
         if true_positive_windows != 0:
             precision = true_positive_windows / (true_positive_windows + false_positive_windows)
@@ -119,10 +119,13 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                                     quoting=csv.QUOTE_MINIMAL,
                                     lineterminator='\n')
                 writer.writerow(
-                    ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures", "ttm",
-                     "precision", 'accuracy', "recall", "f1"])
+                    ["heatmap_type", "summarization_method", "aggregation_type", "simulation_name", "failures",
+                     "detected", "undetected", "undetectable", "ttm", "precision", 'accuracy', "recall", "f1"])
                 writer.writerow([heatmap_type, summary_type[1:], aggregation_method, simulation_name,
                                  str(true_positive_windows + false_negative_windows),
+                                 str(true_positive_windows),
+                                 str(false_negative_windows),
+                                 str(undetectable_windows),
                                  seconds,
                                  str(round(precision * 100)),
                                  str(round(accuracy * 100)),
@@ -139,6 +142,9 @@ def evaluate_failure_prediction(cfg, heatmap_type, simulation_name, summary_type
                                     lineterminator='\n')
                 writer.writerow([heatmap_type, summary_type[1:], aggregation_method, simulation_name,
                                  str(true_positive_windows + false_negative_windows),
+                                 str(true_positive_windows),
+                                 str(false_negative_windows),
+                                 str(undetectable_windows),
                                  seconds,
                                  str(round(precision * 100)),
                                  str(round(accuracy * 100)),
@@ -189,7 +195,6 @@ def compute_tp_and_fn(data_df_anomalous, losses_on_anomalous, threshold, seconds
     frames_to_reassign_2 = fps_anomalous * (seconds_to_anticipate - 1)  # first frame n seconds before the failure
 
     reaction_window = pd.Series()
-    print(all_first_frame_position_crashed_sequences)
 
     for item in all_first_frame_position_crashed_sequences:
         print("analysing failure %d" % item)

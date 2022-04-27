@@ -19,7 +19,7 @@ if __name__ == '__main__':
     cfg.from_pyfile("config_my.py")
 
     for num_samples in ['all', 1000, 1100, 1200, 1300, 1400, 1500]:
-        for condition in ['mutants']:
+        for condition in ['ood', 'mutants']:
             simulations = natsorted(glob.glob('simulations/' + condition + '/*'))
             for am in ['mean', 'max']:
                 for sim in simulations:
